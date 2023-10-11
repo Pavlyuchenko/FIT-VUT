@@ -4,6 +4,10 @@
 #include <ctype.h>
 #include <stdbool.h>
 
+/**
+ * @param
+ * @return
+ */
 bool is_substring(char *str1, char *str2)
 {
 	/*
@@ -18,7 +22,7 @@ bool is_substring(char *str1, char *str2)
 		return false;
 	}
 
-	if (str1_length == 0) // Empty string is a substring of any string
+	if (str1_length == 0 || str1[0] == '\0') // Empty string is a substring of any string
 	{
 		return true;
 	}
@@ -80,26 +84,44 @@ int remove_duplicates(char *arr, int number_of_allowed_chars)
 	return number_of_allowed_chars;
 }
 
+void sort_chars(char *chars, int len)
+{
+	for (int i = 0; i < len - 1; i++)
+	{
+		for (int j = i + 1; j < len; j++)
+		{
+			if (chars[i] > chars[j])
+			{
+				char temp = chars[j];
+				chars[j] = chars[i];
+				chars[i] = temp;
+			}
+		}
+	}
+}
+
 void print_result(int number_of_allowed_chars, char *allowed_chars, char *found_address)
 {
 	if (number_of_allowed_chars == 0)
 	{
-		printf("Not found");
+		printf("Not found\n");
 	}
 	else if (number_of_allowed_chars == 1)
 	{
-		printf("Found: %s", found_address);
+		printf("Found: %s\n", found_address);
 	}
 	else
 	{
 		printf("Enable: ");
 
 		number_of_allowed_chars = remove_duplicates(allowed_chars, number_of_allowed_chars);
+		sort_chars(allowed_chars, number_of_allowed_chars);
 
 		for (int i = 0; i < number_of_allowed_chars; i++)
 		{
 			putchar(allowed_chars[i]);
 		}
+		printf("\n");
 	}
 }
 
@@ -111,6 +133,11 @@ int main(int argc, char *argv[])
 	{
 		strcpy(search, argv[1]);
 	}
+	else
+	{
+		strcpy(search, "\0");
+	}
+
 	int search_length = strlen(search);
 
 	to_upper(search);
