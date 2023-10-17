@@ -5,8 +5,10 @@
 #include <stdbool.h>
 
 /**
- * @param
- * @return
+ * Checks if first string is substring of the other string
+ * @param str1 - char array that is being checked for substring
+ * @param str2 - char array that str1 is being checked against
+ * @return bool -> true if str1 is substring of str2
  */
 bool is_substring(char *str1, char *str2)
 {
@@ -38,9 +40,12 @@ bool is_substring(char *str1, char *str2)
 	return true;
 }
 
+/**
+ * Inplace conversion of all chars in str to uppercase
+ * @param str - string of any case
+ */
 void to_upper(char *str)
 {
-	/* Inplace conversion of all chars in str to uppercase */
 	int i = 0;
 	while (str[i] != '\0')
 	{
@@ -49,10 +54,13 @@ void to_upper(char *str)
 	}
 }
 
+/**
+ * Loads a line inplace from stdin into store variable
+ * @param store - string of characters that the line will be loaded into
+ * @param c - the first character of the line
+ */
 void load_line(char *store, char c)
 {
-	/* Loads a line from stdin into store variable */
-
 	int i = 0;
 	while (c != '\n' && c != EOF && c != '\0')
 	{
@@ -66,6 +74,9 @@ void load_line(char *store, char c)
 	store[i] = '\0';
 }
 
+/**
+ * Removes duplicate characters from arr and adjusts the resulting number of characters
+ */
 int remove_duplicates(char *arr, int number_of_allowed_chars)
 {
 	for (int i = 0; i < number_of_allowed_chars; i++)
@@ -84,6 +95,9 @@ int remove_duplicates(char *arr, int number_of_allowed_chars)
 	return number_of_allowed_chars;
 }
 
+/**
+ * Sort characters inplace in an array. Using O(n**2) Insertion sort.
+ */
 void sort_chars(char *chars, int len)
 {
 	for (int i = 0; i < len - 1; i++)
@@ -100,6 +114,9 @@ void sort_chars(char *chars, int len)
 	}
 }
 
+/**
+ * Helper function for printing the results to stdout.
+ */
 void print_result(int number_of_allowed_chars, char *allowed_chars, char *found_address)
 {
 	if (number_of_allowed_chars == 0)
