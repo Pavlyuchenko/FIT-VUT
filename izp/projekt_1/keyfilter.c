@@ -1,8 +1,30 @@
+/*
+ * File:    keyfilter.c
+ * Date:    28. 10. 2023
+ * Author:  Michal Pavlíček, xpavlim00@stud.fit.vutbr.cz
+ */
+
+// Header files
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdbool.h>
+
+// Constants
+#define MAX_ADRESS_LENGTH 101
+
+// Error codes
+#define ERROR_TOO_LONG_LINE 1	// Line from stdin is too long
+#define ERROR_TOO_LONG_SEARCH 2 // Search argument is too long
+
+// List of functions
+bool is_substring(char *str1, char *str2);
+void to_upper(char *str);
+void load_line(char *store, char c);
+int remove_duplicates(char *arr, int number_of_allowed_chars);
+void sort_chars(char *chars, int len);
+void print_result(int number_of_allowed_chars, char *allowed_chars, char *found_address);
 
 /**
  * Checks if first string is substring of the other string
@@ -19,7 +41,7 @@ bool is_substring(char *str1, char *str2)
 	int str1_length = strlen(str1);
 	int str2_length = strlen(str2);
 
-	if (str1_length > str2_length)
+	if (str1_length > str2_length) // Can't be substring if str1 is longer than str2
 	{
 		return false;
 	}
@@ -64,6 +86,12 @@ void load_line(char *store, char c)
 	int i = 0;
 	while (c != '\n' && c != EOF && c != '\0')
 	{
+		if (i > MAX_ADRESS_LENGTH)
+		{
+			fprintf(stderr, "Error: Line from stdin is too long. Max length is %d.\n", MAX_ADRESS_LENGTH);
+			exit(ERROR_TOO_LONG_LINE);
+		}
+
 		c = toupper(c);
 		store[i] = c;
 		i++;
@@ -121,14 +149,17 @@ void print_result(int number_of_allowed_chars, char *allowed_chars, char *found_
 {
 	if (number_of_allowed_chars == 0)
 	{
+		/* 3. Adresa nenalezena */
 		printf("Not found\n");
 	}
 	else if (number_of_allowed_chars == 1)
 	{
+		/* 1. Adresa nalezena */
 		printf("Found: %s\n", found_address);
 	}
 	else
 	{
+		/* 2. Adresa vyžaduje specifikaci */
 		printf("Enable: ");
 
 		number_of_allowed_chars = remove_duplicates(allowed_chars, number_of_allowed_chars);
@@ -144,22 +175,27 @@ void print_result(int number_of_allowed_chars, char *allowed_chars, char *found_
 
 int main(int argc, char *argv[])
 {
-	char search[200];
+	char search[MAX_ADRESS_LENGTH];
 
 	if (argc >= 2)
 	{
+		if (strlen(argv[1]) > MAX_ADRESS_LENGTH)
+		{
+			fprintf(stderr, "Error: Your search argument is too long. Max length is %d.\n", MAX_ADRESS_LENGTH);
+			return ERROR_TOO_LONG_SEARCH;
+		}
+
 		strcpy(search, argv[1]);
 	}
 	else
 	{
 		strcpy(search, "\0");
 	}
+	to_upper(search);
 
 	int search_length = strlen(search);
 
-	to_upper(search);
-
-	char found_address[200]; // For storing found address in case it has to be printed (if it was the only one FOUND)
+	char found_address[MAX_ADRESS_LENGTH]; // For storing found address in case it has to be printed (if it was the only one FOUND)
 
 	int number_of_allowed_chars = 0;
 	char allowed_chars[26];
@@ -167,7 +203,7 @@ int main(int argc, char *argv[])
 	char c = getchar();
 	while (c != EOF)
 	{
-		char temp_address[200]; // For storing address from stdin
+		char temp_address[MAX_ADRESS_LENGTH]; // For storing address from stdin
 		load_line(temp_address, c);
 
 		bool is_substr = is_substring(search, temp_address);
