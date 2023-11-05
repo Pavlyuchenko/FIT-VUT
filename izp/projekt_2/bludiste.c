@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
 
 typedef struct
 {
     int rows;
     int cols;
+    // Has length rows * cols, and the values are saved row after row.
     unsigned char *cells;
 } Map;
 
@@ -15,8 +17,7 @@ Map Map_ctor(int rows, int cols)
     Map map;
     map.rows = rows;
     map.cols = cols;
-    map.cells = malloc((cols * rows + 1) * sizeof(char));
-    map.cells[cols * rows] = '\0';
+    map.cells = malloc((cols * rows) * sizeof(char));
     return map;
 }
 
@@ -100,10 +101,64 @@ void Map_valid_maze(Map *map)
     // Those are marked with ERROR
     // Here the checks will focus on walls of the maze
 
-    // Check: all the neighbouring cells have walls at the same locations
-    for (int i = 0; i < map->cols * map->rows; i++)
+    // Check: all the cells on the same row have the wall on the same position
+    //        meaning that right wall of first cells has to be the same as left wall of second cell...
+    for (int i = 0; i < map->rows; i++)
     {
+        for (int j = 0; j < map->cols - 1; j++)
+        {
+            char left_cell = map->cells[i * map->cols + j];
+            char right_cell = map->cells[i * map->cols + j + 1];
+
+            char *left_cell_binary = dec_to_bin(left_cell);
+            char *right_cell_binary = dec_to_bin(right_cell);
+            if (!left_cell_binary || !right_cell_binary)
+            {
+                fprintf(stderr, "Something unexpected happened"); // TODO: Figure out what to do here
+            }
+
+            char wall_1 = left_cell_binary[1];  // Right wall of 1st cell
+            char wall_2 = right_cell_binary[2]; // Left wall of 2nd cell
+
+            free(left_cell_binary);
+            free(right_cell_binary);
+
+            if (wall_1 != wall_2)
+            {
+                fprintf(stderr, "Invalid"); // The wall do not correspond with each other
+            }
         }
+    }
+
+    // Check: all the cells on the same column have the wall on the same position
+    //        meaning that bottom/top wall of first cell has to be the same as top/bottom wall of second cell...
+    for (int i = 0; i < map->rows - 1; i++)
+    {
+        // The ternary operator sets j = 1 if we are on an even row, and j = 0 if on an odd row
+        for (int j = i % 2 == 0 ? 1 : 0; j < map->cols; j += 2)
+        {
+            char bottom_cell = map->cells[i * map->cols + j + map->cols];
+            char top_cell = map->cells[i * map->cols + j];
+
+            char *top_cell_binary = dec_to_bin(top_cell);
+            char *bottom_cell_binary = dec_to_bin(bottom_cell);
+            if (!top_cell_binary || !bottom_cell_binary)
+            {
+                fprintf(stderr, "Something unexpected happened"); // TODO: Figure out what to do here
+            }
+
+            char wall_1 = top_cell_binary[0];    // Right wall of 1st cell
+            char wall_2 = bottom_cell_binary[0]; // Left wall of 2nd cell
+
+            free(top_cell_binary);
+            free(bottom_cell_binary);
+
+            if (wall_1 != wall_2)
+            {
+                fprintf(stderr, "Invalid\n"); // The wall do not correspond with each other
+            }
+        }
+    }
 }
 
 void Map_dtor(Map *map)
@@ -141,6 +196,7 @@ int main()
 
     Map_print(&map);
 
+    Map_valid_maze(&map);
     /**
      * Here will be something like:
      * Map_solve(&map);
