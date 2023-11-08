@@ -4,6 +4,12 @@
 #include <stdbool.h>
 #include <math.h>
 
+// indexes of walls in binary number
+const int TOP_WALL = 0;
+const int BOTTOM_WALL = TOP_WALL; // MSB
+const int RIGHT_WALL = 1;         // 010
+const int LEFT_WALL = 2;          // LSB
+
 typedef struct
 {
     int rows;
@@ -11,61 +17,6 @@ typedef struct
     // Has length rows * cols, and the values are saved row after row.
     unsigned char *cells;
 } Map;
-
-Map Map_ctor(int rows, int cols)
-{
-    Map map;
-    map.rows = rows;
-    map.cols = cols;
-    map.cells = malloc((cols * rows) * sizeof(char));
-    return map;
-}
-
-void Map_loader(Map *map, FILE *file)
-{
-    if (map->rows < 1 || map->cols < 1)
-    {
-        // ERROR: Rows and cols cannot be less than 1
-        fprintf(stderr, "Invalid\n");
-        exit(1);
-    }
-
-    char line_str[map->cols * 2]; // * 2 for whitespace
-    int line = 0;
-    while (!feof(file))
-    {
-        fgets(line_str, map->cols * 2, file);
-        fgetc(file); // Ignore \n
-
-        if (strlen(line_str) != map->cols * 2 - 1)
-        {
-            // ERROR: The number of columns given does not correspond to the actual maze number of columns.
-            fprintf(stderr, "Invalid\n");
-            exit(1);
-        }
-
-        for (int i = 0; i < map->cols; i++)
-        {
-            if (line_str[i * 2] < '0' || line_str[i * 2] > '9')
-            {
-                // ERROR: The maze contains a non-numeric character.
-                fprintf(stderr, "Invalid\n");
-                exit(1);
-            }
-
-            map->cells[map->cols * line + i] = line_str[i * 2]; // * 2 skips whitespace
-        }
-
-        line++;
-    }
-
-    if (line != map->rows)
-    {
-        // ERROR: The number of rows given does not correspond to the actual maze number of rows.
-        fprintf(stderr, "The number of rows given does not correspond to the actual maze number of rows.\n");
-        return;
-    }
-}
 
 char *dec_to_bin(char dec_ch)
 {
@@ -95,6 +46,88 @@ char *dec_to_bin(char dec_ch)
     return bin;
 }
 
+bool isborder(Map *map, int r, int c, int border)
+{
+    // border == 0 -> top 100
+    // border == 1 -> right 010
+    // border == 2 -> left 001
+    char *cell = dec_to_bin(map->cells[r * map->cols + c]);
+
+    if (!cell)
+    {
+        fprintf(stderr, "Something unexpected happened"); // TODO: Figure out what to do here
+    }
+
+    char wall = cell[border];
+    free(cell);
+
+    if (wall == '1')
+    {
+        return true;
+    }
+
+    return false;
+}
+
+int start_border(Map *map, int r, int c, int leftright)
+{
+}
+
+Map Map_ctor(int rows, int cols)
+{
+    Map map;
+    map.rows = rows;
+    map.cols = cols;
+    map.cells = malloc((cols * rows) * sizeof(char));
+    return map;
+}
+
+void Map_loader(Map *map, FILE *file)
+{
+    if (map->rows < 1 || map->cols < 1)
+    {
+        // ERROR: Rows and cols cannot be less than 1
+        fprintf(stderr, "Invalid");
+        exit(1);
+    }
+
+    char line_str[map->cols * 2]; // * 2 for whitespace
+    int line = 0;
+    while (!feof(file))
+    {
+        fgets(line_str, map->cols * 2, file);
+        fgetc(file); // Ignore \n
+        size_t row_len = map->cols * 2 - 1;
+        if (strlen(line_str) != row_len)
+        {
+            // ERROR: The number of columns given does not correspond to the actual maze number of columns.
+            fprintf(stderr, "Invalid");
+            exit(1);
+        }
+
+        for (int i = 0; i < map->cols; i++)
+        {
+            if (line_str[i * 2] < '0' || line_str[i * 2] > '9')
+            {
+                // ERROR: The maze contains a non-numeric character.
+                fprintf(stderr, "Invalid");
+                exit(1);
+            }
+
+            map->cells[map->cols * line + i] = line_str[i * 2]; // * 2 skips whitespace
+        }
+
+        line++;
+    }
+
+    if (line != map->rows)
+    {
+        // ERROR: The number of rows given does not correspond to the actual maze number of rows.
+        fprintf(stderr, "The number of rows given does not correspond to the actual maze number of rows.\n");
+        return;
+    }
+}
+
 void Map_valid_maze(Map *map)
 {
     // NOTE: some validity checks are already done in Map_loader
@@ -107,25 +140,9 @@ void Map_valid_maze(Map *map)
     {
         for (int j = 0; j < map->cols - 1; j++)
         {
-            char left_cell = map->cells[i * map->cols + j];
-            char right_cell = map->cells[i * map->cols + j + 1];
-
-            char *left_cell_binary = dec_to_bin(left_cell);
-            char *right_cell_binary = dec_to_bin(right_cell);
-            if (!left_cell_binary || !right_cell_binary)
+            if (isborder(map, i, j, RIGHT_WALL) != isborder(map, i, j + 1, LEFT_WALL))
             {
-                fprintf(stderr, "Something unexpected happened"); // TODO: Figure out what to do here
-            }
-
-            char wall_1 = left_cell_binary[1];  // Right wall of 1st cell
-            char wall_2 = right_cell_binary[2]; // Left wall of 2nd cell
-
-            free(left_cell_binary);
-            free(right_cell_binary);
-
-            if (wall_1 != wall_2)
-            {
-                fprintf(stderr, "Invalid"); // The wall do not correspond with each other
+                fprintf(stderr, "Invalid"); // The walls do not correspond with each other
             }
         }
     }
@@ -137,25 +154,9 @@ void Map_valid_maze(Map *map)
         // The ternary operator sets j = 1 if we are on an even row, and j = 0 if on an odd row
         for (int j = i % 2 == 0 ? 1 : 0; j < map->cols; j += 2)
         {
-            char bottom_cell = map->cells[i * map->cols + j + map->cols];
-            char top_cell = map->cells[i * map->cols + j];
-
-            char *top_cell_binary = dec_to_bin(top_cell);
-            char *bottom_cell_binary = dec_to_bin(bottom_cell);
-            if (!top_cell_binary || !bottom_cell_binary)
+            if (isborder(map, i, j, TOP_WALL) != isborder(map, i + 1, j, 0))
             {
-                fprintf(stderr, "Something unexpected happened"); // TODO: Figure out what to do here
-            }
-
-            char wall_1 = top_cell_binary[0];    // Right wall of 1st cell
-            char wall_2 = bottom_cell_binary[0]; // Left wall of 2nd cell
-
-            free(top_cell_binary);
-            free(bottom_cell_binary);
-
-            if (wall_1 != wall_2)
-            {
-                fprintf(stderr, "Invalid\n"); // The wall do not correspond with each other
+                fprintf(stderr, "Invalid"); // The walls do not correspond with each other
             }
         }
     }
@@ -197,14 +198,6 @@ int main()
     Map_print(&map);
 
     Map_valid_maze(&map);
-    /**
-     * Here will be something like:
-     * Map_solve(&map);
-     *
-     * Some findings:
-     * - on odd row, odd columns can go down, even columns can go up
-     * - on even row, odd columns can go up, even columns can go down (due to triangularity of the maze)
-     */
 
     Map_dtor(&map);
     fclose(file);
