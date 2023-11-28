@@ -4,11 +4,23 @@
 #include <stdbool.h>
 #include <math.h>
 
-// indexes of walls in binary number
-const int TOP_WALL = 0;
-const int BOTTOM_WALL = TOP_WALL; // MSB
-const int RIGHT_WALL = 1;         // 010
-const int LEFT_WALL = 2;          // LSB
+// convert to enum
+
+enum Wall
+{
+    TOP_WALL,   // MSB
+    RIGHT_WALL, // 010
+    LEFT_WALL   // LSB
+};
+int BOTTOM_WALL = TOP_WALL;
+
+enum From
+{
+    TOP,
+    RIGHT,
+    BOTTOM,
+    LEFT
+};
 
 typedef struct
 {
@@ -91,40 +103,31 @@ void Map_loader(Map *map, FILE *file)
         exit(1);
     }
 
-    char line_str[map->cols * 2]; // * 2 for whitespace
-    int line = 0;
-    while (!feof(file))
+    char ch;
+    int i = 0;
+    while ((ch = fgetc(file)) != EOF)
     {
-        fgets(line_str, map->cols * 2, file);
-        fgetc(file); // Ignore \n
-        size_t row_len = map->cols * 2 - 1;
-        if (strlen(line_str) != row_len)
+        if (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r')
         {
-            // ERROR: The number of columns given does not correspond to the actual maze number of columns.
+            continue;
+        }
+
+        if (ch < '0' || ch > '9')
+        {
+            // ERROR: The maze contains a non-numeric character.
             fprintf(stderr, "Invalid");
             exit(1);
         }
 
-        for (int i = 0; i < map->cols; i++)
-        {
-            if (line_str[i * 2] < '0' || line_str[i * 2] > '9')
-            {
-                // ERROR: The maze contains a non-numeric character.
-                fprintf(stderr, "Invalid");
-                exit(1);
-            }
-
-            map->cells[map->cols * line + i] = line_str[i * 2]; // * 2 skips whitespace
-        }
-
-        line++;
+        map->cells[i] = ch;
+        i++;
     }
 
-    if (line != map->rows)
+    if (i != map->rows * map->cols)
     {
         // ERROR: The number of rows given does not correspond to the actual maze number of rows.
-        fprintf(stderr, "The number of rows given does not correspond to the actual maze number of rows.\n");
-        return;
+        fprintf(stderr, "Invalid");
+        exit(1);
     }
 }
 
@@ -143,6 +146,7 @@ void Map_valid_maze(Map *map)
             if (isborder(map, i, j, RIGHT_WALL) != isborder(map, i, j + 1, LEFT_WALL))
             {
                 fprintf(stderr, "Invalid"); // The walls do not correspond with each other
+                exit(1);
             }
         }
     }
@@ -157,6 +161,7 @@ void Map_valid_maze(Map *map)
             if (isborder(map, i, j, TOP_WALL) != isborder(map, i + 1, j, 0))
             {
                 fprintf(stderr, "Invalid"); // The walls do not correspond with each other
+                exit(1);
             }
         }
     }
@@ -180,16 +185,182 @@ void Map_print(Map *map)
     }
 }
 
-int main()
+bool has_top_wall(Map *map, int r, int c)
 {
+    return ((r + c) % 2 == 0);
+}
+
+void Map_solve(Map *map, int row, int col, int from)
+{
+    // if from == 0 -> top
+    // if from == 1 -> right
+    // if from == 2 -> bottom
+    // if from == 3 -> left
+    // Nodes are numbered from 1
+    if (row < 0 || row >= map->rows || col < 0 || col >= map->cols)
+    {
+        // ERROR: The position is outside the maze.
+        fprintf(stderr, "The position is outside the maze.");
+        exit(1);
+    }
+
+    printf("%d,%d\n", row + 1, col + 1);
+
+    // left hand rule
+    char curr_node = map->cells[row * map->cols + col];
+
+    char *curr_bin = dec_to_bin(curr_node);
+
+    if (!curr_bin)
+    {
+        fprintf(stderr, "Something unexpected happened 1"); // TODO: Figure out what to do here
+    }
+
+    if (curr_bin[0] == '1' && curr_bin[1] == '1' && curr_bin[2] == '1')
+    {
+        // ERROR: The position is a dead end.
+        fprintf(stderr, "The position is a dead end. How did you get here?");
+        exit(1);
+    }
+
+    switch (from)
+    {
+    case TOP:
+        if (!isborder(map, row, col, RIGHT_WALL))
+        {
+            Map_solve(map, row, col + 1, LEFT);
+        }
+        else if (!isborder(map, row, col, LEFT_WALL))
+        {
+            Map_solve(map, row, col - 1, RIGHT);
+        }
+        else
+        {
+            Map_solve(map, row - 1, col, BOTTOM);
+        }
+        break;
+    case RIGHT:
+        if (!has_top_wall(map, row, col) && !isborder(map, row, col, BOTTOM_WALL))
+        {
+            Map_solve(map, row + 1, col, TOP);
+        }
+        else if (!isborder(map, row, col, LEFT_WALL))
+        {
+            Map_solve(map, row, col - 1, RIGHT);
+        }
+        else if (has_top_wall(map, row, col) && !isborder(map, row, col, TOP_WALL))
+        {
+            Map_solve(map, row - 1, col, BOTTOM);
+        }
+        else
+        {
+            Map_solve(map, row, col + 1, LEFT);
+        }
+        break;
+    case BOTTOM:
+        if (!isborder(map, row, col, LEFT_WALL))
+        {
+            Map_solve(map, row, col - 1, RIGHT);
+        }
+        else if (!isborder(map, row, col, RIGHT_WALL))
+        {
+            Map_solve(map, row, col + 1, LEFT);
+        }
+        else
+        {
+            Map_solve(map, row + 1, col, TOP);
+        }
+        break;
+    case LEFT:
+        if (has_top_wall(map, row, col) && !isborder(map, row, col, TOP_WALL))
+        {
+            Map_solve(map, row - 1, col, BOTTOM);
+        }
+        else if (!isborder(map, row, col, RIGHT_WALL))
+        {
+            Map_solve(map, row, col + 1, LEFT);
+        }
+        else if (!has_top_wall(map, row, col) && !isborder(map, row, col, BOTTOM_WALL))
+        {
+            Map_solve(map, row + 1, col, TOP);
+        }
+        else
+        {
+            Map_solve(map, row - 1, col, RIGHT);
+        }
+        break;
+    default:
+        fprintf(stderr, "Something unexpected happened 2"); // TODO: Figure out what to do here
+        break;
+    }
+
+    free(curr_bin);
+}
+
+int main(int argc, char *argv[])
+{
+    /* char *option = argv[1];
+
+     if (strcmp(option, "--help") == 0)
+     {
+         printf("To run the code, use one of the following options:\n\t./maze --test <maze_file>\n\t./maze --rpath <rows> <cols> <maze_file>\n\t./maze --lpath <rows> <cols> <maze_file>\n");
+         return 0;
+     }
+
+     if (strcmp(option, "--test") != 0 && strcmp(option, "--rpath") != 0 && strcmp(option, "--lpath") != 0)
+     {
+         fprintf(stderr, "Invalid option");
+         return 1;
+     }
+
+     int start_row = atoi(argv[2]);
+     int start_col = atoi(argv[3]);
+     char *maze_file = argv[4];
+     if (strcmp(option, "--test") == 0)
+     {
+         start_row = 0;
+         start_col = 0;
+
+         maze_file = argv[2];
+     } */
+
+    int start_row = 6;
+    int start_col = 1;
 
     FILE *file = fopen("bludiste.txt", "r");
 
-    char first_line[5];
+    int rows;
+    int cols;
 
-    fgets(first_line, 5, file);
-    int rows = first_line[0] - '0';
-    int cols = first_line[2] - '0';
+    // TODO: Extract this code into a function
+    char ch;
+    int num_of_params = 0;
+    while ((ch = fgetc(file)) != EOF)
+    {
+        if (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r')
+        {
+            continue;
+        }
+
+        if (ch < '0' || ch > '9')
+        {
+            fprintf(stderr, "Invalid");
+            exit(1);
+        }
+
+        if (num_of_params == 0)
+        {
+            rows = ch - '0';
+            num_of_params++;
+        }
+        else if (num_of_params == 1)
+        {
+            cols = ch - '0';
+            num_of_params++;
+            break;
+        }
+    }
+    // End of extract
 
     Map map = Map_ctor(rows, cols);
 
@@ -199,7 +370,16 @@ int main()
 
     Map_valid_maze(&map);
 
+    /* if (strcmp(option, "--test") == 0)
+    {
+        printf("Valid");
+        return 0;
+    } */
+
+    Map_solve(&map, start_row - 1, start_col - 1, LEFT);
+
     Map_dtor(&map);
+
     fclose(file);
 
     return 0;
