@@ -1,3 +1,10 @@
+/**
+ * IZP Projekt 2
+ * Autor: Michal Pavlíček
+ * Login: xpavlim00
+ * Email: xpavlim00@stud.fit.vutbr.cz
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
