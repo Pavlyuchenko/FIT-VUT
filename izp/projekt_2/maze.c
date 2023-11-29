@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include <ctype.h>
 
 // convert to enum
 
@@ -29,6 +30,83 @@ typedef struct
     // Has length rows * cols, and the values are saved row after row.
     unsigned char *cells;
 } Map;
+
+typedef struct
+{
+    int row;
+    int col;
+} Node;
+
+Node node_ctor(int row, int col)
+{
+    Node node;
+
+    node.row = row;
+    node.col = col;
+
+    return node;
+}
+
+typedef struct
+{
+    int capacity;
+    int size;
+    int front;
+    int rear;
+    Node *nodes;
+} Queue;
+
+Queue q_ctor(int capacity)
+{
+    Queue queue;
+
+    queue.capacity = capacity;
+    queue.size = 0;
+    queue.front = 0;
+    queue.rear = 0;
+    queue.nodes = malloc(capacity * sizeof(Node));
+
+    return queue;
+}
+
+void q_dtor(Queue *queue)
+{
+    free(queue->nodes);
+    queue->nodes = NULL;
+}
+
+void enqueue(Queue *queue, Node node)
+{
+    if (queue->size == queue->capacity)
+    {
+        fprintf(stderr, "Queue is full");
+        return;
+    }
+
+    queue->nodes[queue->rear] = node;
+    queue->rear = (queue->rear + 1) % queue->capacity;
+    queue->size++;
+}
+
+Node dequeue(Queue *queue)
+{
+    if (queue->size == 0)
+    {
+        fprintf(stderr, "Queue is empty");
+        return (Node){-1, -1};
+    }
+
+    Node node = queue->nodes[queue->front];
+    queue->front = (queue->front + 1) % queue->capacity;
+    queue->size--;
+
+    return node;
+}
+
+bool q_is_empty(Queue *queue)
+{
+    return queue->size == 0;
+}
 
 char *dec_to_bin(char dec_ch)
 {
@@ -67,7 +145,7 @@ bool isborder(Map *map, int r, int c, int border)
 
     if (!cell)
     {
-        fprintf(stderr, "Something unexpected happened"); // TODO: Figure out what to do here
+        fprintf(stdout, "Something unexpected happened"); // TODO: Figure out what to do here
     }
 
     char wall = cell[border];
@@ -81,30 +159,71 @@ bool isborder(Map *map, int r, int c, int border)
     return false;
 }
 
-int start_border(Map *map, int r, int c, int leftright)
+int start_border(Map *map, int r, int c)
 {
+    // Figures out what the starting direction is (= where we came from) and if there is no wall there
+    // returns the direction, otherwise returns -1
+
+    if (r > 1 && c > 1 && r < map->rows - 1 && c < map->cols - 1)
+    {
+        // We are not on the edge of the maze
+        return -1;
+    }
+
+    if (r == 1)
+    {
+        if (!isborder(map, r - 1, c - 1, TOP_WALL))
+        {
+            return TOP;
+        }
+    }
+
+    if (r == map->rows)
+    {
+        if (!isborder(map, r - 1, c - 1, BOTTOM_WALL))
+        {
+            return BOTTOM;
+        }
+    }
+
+    if (c == 1)
+    {
+        if (!isborder(map, r - 1, c - 1, LEFT_WALL))
+        {
+            return LEFT;
+        }
+    }
+    if (c == map->cols)
+    {
+        if (!isborder(map, r - 1, c - 1, RIGHT_WALL))
+        {
+            return RIGHT;
+        }
+    }
+
+    return -1;
 }
 
-Map Map_ctor(int rows, int cols)
+Map *Map_ctor(int rows, int cols)
 {
-    Map map;
-    map.rows = rows;
-    map.cols = cols;
-    map.cells = malloc((cols * rows) * sizeof(char));
+    Map *map = malloc(sizeof(Map));
+
+    map->rows = rows;
+    map->cols = cols;
+    map->cells = malloc((cols * rows) * sizeof(char));
+
     return map;
 }
 
-void Map_loader(Map *map, FILE *file)
+Map Map_loader(FILE *file)
 {
-    if (map->rows < 1 || map->cols < 1)
-    {
-        // ERROR: Rows and cols cannot be less than 1
-        fprintf(stderr, "Invalid");
-        exit(1);
-    }
+    int rows;
+    int cols;
+    Map *map;
 
     char ch;
-    int i = 0;
+    int i = -2;
+
     while ((ch = fgetc(file)) != EOF)
     {
         if (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r')
@@ -112,23 +231,61 @@ void Map_loader(Map *map, FILE *file)
             continue;
         }
 
-        if (ch < '0' || ch > '9')
+        if (!isdigit(ch))
         {
             // ERROR: The maze contains a non-numeric character.
-            fprintf(stderr, "Invalid");
+            fprintf(stdout, "Invalid\n");
             exit(1);
         }
 
-        map->cells[i] = ch;
+        int num = ch - '0';
+
+        while ((ch = fgetc(file)) != EOF && isdigit(ch))
+        {
+            num = num * 10 + (ch - '0');
+        }
+
+        if (i == -2)
+        {
+            rows = num;
+            if (rows < 1)
+            {
+                fprintf(stdout, "Invalid\n");
+                exit(1);
+            }
+        }
+        else if (i == -1)
+        {
+            cols = num;
+            if (cols < 1)
+            {
+                fprintf(stdout, "Invalid\n");
+                exit(1);
+            }
+
+            map = Map_ctor(rows, cols);
+        }
+        else
+        {
+            map->cells[i] = num + '0';
+        }
         i++;
+    }
+
+    if (!map)
+    {
+        fprintf(stdout, "Invalid\n");
+        exit(1);
     }
 
     if (i != map->rows * map->cols)
     {
         // ERROR: The number of rows given does not correspond to the actual maze number of rows.
-        fprintf(stderr, "Invalid");
+        fprintf(stdout, "Invalid\n");
         exit(1);
     }
+
+    return *map;
 }
 
 void Map_valid_maze(Map *map)
@@ -145,8 +302,8 @@ void Map_valid_maze(Map *map)
         {
             if (isborder(map, i, j, RIGHT_WALL) != isborder(map, i, j + 1, LEFT_WALL))
             {
-                fprintf(stderr, "Invalid"); // The walls do not correspond with each other
-                exit(1);
+                fprintf(stdout, "Invalid\n"); // The walls do not correspond with each other
+                return;
             }
         }
     }
@@ -160,11 +317,13 @@ void Map_valid_maze(Map *map)
         {
             if (isborder(map, i, j, TOP_WALL) != isborder(map, i + 1, j, 0))
             {
-                fprintf(stderr, "Invalid"); // The walls do not correspond with each other
-                exit(1);
+                fprintf(stdout, "Invalid\n"); // The walls do not correspond with each other
+                return;
             }
         }
     }
+
+    printf("Valid\n");
 }
 
 void Map_dtor(Map *map)
@@ -185,28 +344,25 @@ void Map_print(Map *map)
     }
 }
 
-bool has_top_wall(Map *map, int r, int c)
+bool has_top_wall(int r, int c)
 {
     return ((r + c) % 2 == 0);
 }
 
-void Map_solve(Map *map, int row, int col, int from)
+void Map_solve(Map *map, int row, int col, int from, char left_right_shortest)
 {
-    // if from == 0 -> top
-    // if from == 1 -> right
-    // if from == 2 -> bottom
-    // if from == 3 -> left
     // Nodes are numbered from 1
     if (row < 0 || row >= map->rows || col < 0 || col >= map->cols)
     {
-        // ERROR: The position is outside the maze.
-        fprintf(stderr, "The position is outside the maze.");
-        exit(1);
+        // Position is outside the maze -> we are done
+        return;
     }
 
-    printf("%d,%d\n", row + 1, col + 1);
+    if (left_right_shortest != 's')
+    {
+        printf("%d,%d\n", row + 1, col + 1);
+    }
 
-    // left hand rule
     char curr_node = map->cells[row * map->cols + col];
 
     char *curr_bin = dec_to_bin(curr_node);
@@ -223,75 +379,244 @@ void Map_solve(Map *map, int row, int col, int from)
         exit(1);
     }
 
-    switch (from)
+    if (left_right_shortest == 'l')
     {
-    case TOP:
-        if (!isborder(map, row, col, RIGHT_WALL))
+        switch (from)
         {
-            Map_solve(map, row, col + 1, LEFT);
+        case TOP:
+            if (!isborder(map, row, col, RIGHT_WALL))
+            {
+                Map_solve(map, row, col + 1, LEFT, left_right_shortest);
+            }
+            else if (!isborder(map, row, col, LEFT_WALL))
+            {
+                Map_solve(map, row, col - 1, RIGHT, left_right_shortest);
+            }
+            else
+            {
+                Map_solve(map, row - 1, col, BOTTOM, left_right_shortest);
+            }
+            break;
+        case RIGHT:
+            if (!has_top_wall(row, col) && !isborder(map, row, col, BOTTOM_WALL))
+            {
+                Map_solve(map, row + 1, col, TOP, left_right_shortest);
+            }
+            else if (!isborder(map, row, col, LEFT_WALL))
+            {
+                Map_solve(map, row, col - 1, RIGHT, left_right_shortest);
+            }
+            else if (has_top_wall(row, col) && !isborder(map, row, col, TOP_WALL))
+            {
+                Map_solve(map, row - 1, col, BOTTOM, left_right_shortest);
+            }
+            else
+            {
+                Map_solve(map, row, col + 1, LEFT, left_right_shortest);
+            }
+            break;
+        case BOTTOM:
+            if (!isborder(map, row, col, LEFT_WALL))
+            {
+                Map_solve(map, row, col - 1, RIGHT, left_right_shortest);
+            }
+            else if (!isborder(map, row, col, RIGHT_WALL))
+            {
+                Map_solve(map, row, col + 1, LEFT, left_right_shortest);
+            }
+            else
+            {
+                Map_solve(map, row + 1, col, TOP, left_right_shortest);
+            }
+            break;
+        case LEFT:
+            if (has_top_wall(row, col) && !isborder(map, row, col, TOP_WALL))
+            {
+                Map_solve(map, row - 1, col, BOTTOM, left_right_shortest);
+            }
+            else if (!isborder(map, row, col, RIGHT_WALL))
+            {
+                Map_solve(map, row, col + 1, LEFT, left_right_shortest);
+            }
+            else if (!has_top_wall(row, col) && !isborder(map, row, col, BOTTOM_WALL))
+            {
+                Map_solve(map, row + 1, col, TOP, left_right_shortest);
+            }
+            else
+            {
+                Map_solve(map, row, col - 1, RIGHT, left_right_shortest);
+            }
+            break;
+        default:
+            fprintf(stderr, "Something unexpected happened 2"); // TODO: Figure out what to do here
+            break;
         }
-        else if (!isborder(map, row, col, LEFT_WALL))
+    }
+    else if (left_right_shortest == 'r')
+    {
+        switch (from)
         {
-            Map_solve(map, row, col - 1, RIGHT);
+        case TOP:
+            if (!isborder(map, row, col, LEFT_WALL))
+            {
+                Map_solve(map, row, col - 1, RIGHT, left_right_shortest);
+            }
+            else if (!isborder(map, row, col, RIGHT_WALL))
+            {
+                Map_solve(map, row, col + 1, LEFT, left_right_shortest);
+            }
+            else
+            {
+                Map_solve(map, row - 1, col, BOTTOM, left_right_shortest);
+            }
+            break;
+        case RIGHT:
+            if (has_top_wall(row, col) && !isborder(map, row, col, TOP_WALL))
+            {
+                Map_solve(map, row - 1, col, BOTTOM, left_right_shortest);
+            }
+            else if (!isborder(map, row, col, LEFT_WALL))
+            {
+                Map_solve(map, row, col - 1, RIGHT, left_right_shortest);
+            }
+            else if (!has_top_wall(row, col) && !isborder(map, row, col, BOTTOM_WALL))
+            {
+                Map_solve(map, row + 1, col, TOP, left_right_shortest);
+            }
+            else
+            {
+                Map_solve(map, row, col + 1, LEFT, left_right_shortest);
+            }
+            break;
+        case BOTTOM:
+            if (!isborder(map, row, col, RIGHT_WALL))
+            {
+                Map_solve(map, row, col + 1, LEFT, left_right_shortest);
+            }
+            else if (!isborder(map, row, col, LEFT_WALL))
+            {
+                Map_solve(map, row, col - 1, RIGHT, left_right_shortest);
+            }
+            else
+            {
+                Map_solve(map, row + 1, col, TOP, left_right_shortest);
+            }
+            break;
+        case LEFT:
+            if (!has_top_wall(row, col) && !isborder(map, row, col, BOTTOM_WALL))
+            {
+                Map_solve(map, row + 1, col, TOP, left_right_shortest);
+            }
+            else if (!isborder(map, row, col, RIGHT_WALL))
+            {
+                Map_solve(map, row, col + 1, LEFT, left_right_shortest);
+            }
+            else if (has_top_wall(row, col) && !isborder(map, row, col, TOP_WALL))
+            {
+                Map_solve(map, row - 1, col, BOTTOM, left_right_shortest);
+            }
+            else
+            {
+                Map_solve(map, row, col - 1, RIGHT, left_right_shortest);
+            }
+            break;
+        default:
+            fprintf(stderr, "Something unexpected happened 2"); // TODO: Figure out what to do here
+            break;
         }
-        else
+    }
+    else if (left_right_shortest == 's')
+    {
+        Queue queue;
+
+        queue = q_ctor(map->rows * map->cols);
+
+        // array that stores the previous node for each node
+        Node *pre_nodes = malloc(map->rows * map->cols * sizeof(Node));
+
+        for (int i = 0; i < map->rows * map->cols; i++)
         {
-            Map_solve(map, row - 1, col, BOTTOM);
+            pre_nodes[i] = (Node){-1, -1};
         }
-        break;
-    case RIGHT:
-        if (!has_top_wall(map, row, col) && !isborder(map, row, col, BOTTOM_WALL))
+
+        Node start_node = node_ctor(row, col);
+        enqueue(&queue, start_node);
+        pre_nodes[row * map->cols + col] = node_ctor(row, col);
+
+        Node node;
+        while (!q_is_empty(&queue))
         {
-            Map_solve(map, row + 1, col, TOP);
+            node = dequeue(&queue);
+            if (node.row < 0 || node.row >= map->rows || node.col < 0 || node.col >= map->cols)
+            {
+                continue;
+            }
+
+            // are we at an edge with free wall out?
+            if (node.row == 0 && has_top_wall(node.row, node.col) && !isborder(map, node.row, node.col, TOP_WALL) && node.row != start_node.row && node.col != start_node.col)
+            {
+                break;
+            }
+            if (node.col == map->cols - 1 && !isborder(map, node.row, node.col, RIGHT_WALL) && node.row != start_node.row && node.col != start_node.col)
+            {
+                break;
+            }
+            if (node.row == map->rows - 1 && !has_top_wall(node.row, node.col) && !isborder(map, node.row, node.col, BOTTOM_WALL) && node.row != start_node.row && node.col != start_node.col)
+            {
+                break;
+            }
+            if (node.col == 0 && !isborder(map, node.row, node.col, LEFT_WALL) && node.row != start_node.row && node.col != start_node.col)
+            {
+                break;
+            }
+
+            char curr_node = map->cells[node.row * map->cols + node.col];
+
+            char *curr_bin = dec_to_bin(curr_node);
+
+            if (!curr_bin)
+            {
+                fprintf(stderr, "Something unexpected happened 1"); // TODO: Figure out what to do here
+            }
+
+            if (has_top_wall(node.row, node.col) && !isborder(map, node.row, node.col, TOP_WALL) && pre_nodes[(node.row - 1) * map->cols + node.col].row == -1)
+            {
+                enqueue(&queue, node_ctor(node.row - 1, node.col));
+                pre_nodes[(node.row - 1) * map->cols + node.col] = node;
+            }
+            if (!isborder(map, node.row, node.col, RIGHT_WALL) && pre_nodes[node.row * map->cols + node.col + 1].row == -1)
+            {
+                enqueue(&queue, node_ctor(node.row, node.col + 1));
+                pre_nodes[node.row * map->cols + node.col + 1] = node;
+            }
+            if (!has_top_wall(node.row, node.col) && !isborder(map, node.row, node.col, BOTTOM_WALL) && pre_nodes[(node.row + 1) * map->cols + node.col].row == -1)
+            {
+                enqueue(&queue, node_ctor(node.row + 1, node.col));
+                pre_nodes[(node.row + 1) * map->cols + node.col] = node;
+            }
+            if (!isborder(map, node.row, node.col, LEFT_WALL) && pre_nodes[node.row * map->cols + node.col - 1].row == -1)
+            {
+                enqueue(&queue, node_ctor(node.row, node.col - 1));
+                pre_nodes[node.row * map->cols + node.col - 1] = node;
+            }
         }
-        else if (!isborder(map, row, col, LEFT_WALL))
+        // print the path
+        Node *print_arr = malloc(map->rows * map->cols * sizeof(Node));
+        Node curr_node = node;
+        int index = 0;
+        while (curr_node.row != start_node.row || curr_node.col != start_node.col)
         {
-            Map_solve(map, row, col - 1, RIGHT);
+            print_arr[index] = curr_node;
+            index++;
+            curr_node = pre_nodes[curr_node.row * map->cols + curr_node.col];
         }
-        else if (has_top_wall(map, row, col) && !isborder(map, row, col, TOP_WALL))
+        print_arr[index] = curr_node;
+
+        // print print_arr reversed
+        for (int i = index; i >= 0; i--)
         {
-            Map_solve(map, row - 1, col, BOTTOM);
+            printf("%d,%d\n", print_arr[i].row + 1, print_arr[i].col + 1);
         }
-        else
-        {
-            Map_solve(map, row, col + 1, LEFT);
-        }
-        break;
-    case BOTTOM:
-        if (!isborder(map, row, col, LEFT_WALL))
-        {
-            Map_solve(map, row, col - 1, RIGHT);
-        }
-        else if (!isborder(map, row, col, RIGHT_WALL))
-        {
-            Map_solve(map, row, col + 1, LEFT);
-        }
-        else
-        {
-            Map_solve(map, row + 1, col, TOP);
-        }
-        break;
-    case LEFT:
-        if (has_top_wall(map, row, col) && !isborder(map, row, col, TOP_WALL))
-        {
-            Map_solve(map, row - 1, col, BOTTOM);
-        }
-        else if (!isborder(map, row, col, RIGHT_WALL))
-        {
-            Map_solve(map, row, col + 1, LEFT);
-        }
-        else if (!has_top_wall(map, row, col) && !isborder(map, row, col, BOTTOM_WALL))
-        {
-            Map_solve(map, row + 1, col, TOP);
-        }
-        else
-        {
-            Map_solve(map, row - 1, col, RIGHT);
-        }
-        break;
-    default:
-        fprintf(stderr, "Something unexpected happened 2"); // TODO: Figure out what to do here
-        break;
     }
 
     free(curr_bin);
@@ -299,84 +624,64 @@ void Map_solve(Map *map, int row, int col, int from)
 
 int main(int argc, char *argv[])
 {
-    /* char *option = argv[1];
 
-     if (strcmp(option, "--help") == 0)
-     {
-         printf("To run the code, use one of the following options:\n\t./maze --test <maze_file>\n\t./maze --rpath <rows> <cols> <maze_file>\n\t./maze --lpath <rows> <cols> <maze_file>\n");
-         return 0;
-     }
-
-     if (strcmp(option, "--test") != 0 && strcmp(option, "--rpath") != 0 && strcmp(option, "--lpath") != 0)
-     {
-         fprintf(stderr, "Invalid option");
-         return 1;
-     }
-
-     int start_row = atoi(argv[2]);
-     int start_col = atoi(argv[3]);
-     char *maze_file = argv[4];
-     if (strcmp(option, "--test") == 0)
-     {
-         start_row = 0;
-         start_col = 0;
-
-         maze_file = argv[2];
-     } */
-
-    int start_row = 6;
-    int start_col = 1;
-
-    FILE *file = fopen("bludiste.txt", "r");
-
-    int rows;
-    int cols;
-
-    // TODO: Extract this code into a function
-    char ch;
-    int num_of_params = 0;
-    while ((ch = fgetc(file)) != EOF)
+    if (argc < 2)
     {
-        if (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r')
-        {
-            continue;
-        }
-
-        if (ch < '0' || ch > '9')
-        {
-            fprintf(stderr, "Invalid");
-            exit(1);
-        }
-
-        if (num_of_params == 0)
-        {
-            rows = ch - '0';
-            num_of_params++;
-        }
-        else if (num_of_params == 1)
-        {
-            cols = ch - '0';
-            num_of_params++;
-            break;
-        }
+        fprintf(stdout, "Invalid\n");
+        return 1;
     }
-    // End of extract
 
-    Map map = Map_ctor(rows, cols);
+    char *option = argv[1];
 
-    Map_loader(&map, file);
-
-    Map_print(&map);
-
-    Map_valid_maze(&map);
-
-    /* if (strcmp(option, "--test") == 0)
+    if (strcmp(option, "--test") != 0 && strcmp(option, "--rpath") != 0 && strcmp(option, "--lpath") != 0 && strcmp(option, "--help") != 0 && strcmp(option, "--shortest") != 0)
     {
-        printf("Valid");
+        fprintf(stderr, "Invalid option");
+        return 1;
+    }
+    else if (strcmp(option, "--help") == 0)
+    {
+        printf("To run the code, use one of the following options:\n\t./maze --test <maze_file>\n\t./maze --rpath <rows> <cols> <maze_file>\n\t./maze --lpath <rows> <cols> <maze_file>\n");
         return 0;
-    } */
+    }
 
-    Map_solve(&map, start_row - 1, start_col - 1, LEFT);
+    int start_row;
+    int start_col;
+    char *maze_file;
+
+    if (strcmp(option, "--test") == 0)
+    {
+        maze_file = argv[2];
+    }
+    else if (strcmp(option, "--rpath") == 0 || strcmp(option, "--lpath") == 0 || strcmp(option, "--shortest") == 0)
+    {
+        start_row = atoi(argv[2]);
+        start_col = atoi(argv[3]);
+        maze_file = argv[4];
+    }
+
+    /*int start_row = 6;
+    int start_col = 1;*/
+
+    FILE *file = fopen(maze_file, "r");
+    // FILE *file = fopen("bludiste.txt", "r");
+
+    Map map;
+
+    map = Map_loader(file);
+
+    // Map_print(&map);
+
+    if (strcmp(option, "--test") == 0)
+    {
+        Map_valid_maze(&map);
+    }
+
+    if (strcmp(option, "--lpath") == 0 || strcmp(option, "--rpath") == 0 || strcmp(option, "--shortest") == 0)
+    {
+        char left_right_shortest = strcmp(option, "--lpath") == 0 ? 'l' : strcmp(option, "--rpath") == 0 ? 'r'
+                                                                                                         : 's';
+        Map_solve(&map, start_row - 1, start_col - 1, start_border(&map, start_row, start_col), left_right_shortest);
+    }
 
     Map_dtor(&map);
 
