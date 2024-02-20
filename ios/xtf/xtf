@@ -49,14 +49,14 @@ while [ $# -gt 0 ]; do
 		shift
 		DATE_AFTER=$1
 		shift
-		DATE_AFTER+=" $1"
+		DATE_AFTER="$DATE_AFTER $1"
 		;;
 	
 	-b)
 		shift
 		DATE_BEFORE=$1
 		shift
-		DATE_BEFORE+=" $1"
+		DATE_BEFORE="$DATE_BEFORE $1"
 		;;
 
 	-c)
@@ -84,14 +84,33 @@ USER=$1
 shift
 
 # Load log files
-FILE=""
+FILES=""
+ZIPPED=""
 while [ $# -gt 0 ]; do
-	if [[ -f $1 ]]; then
-		echo $1 is a file
-		FILE=$1
-	else
-		echo $1 is NOT a file
-	fi
+	echo here
+	case $1 in
+		*.gz | *.tgz)
+			if [ -r $1 ]; then
+				echo .gz file: $1
+				ZIPPED="$UNZIP $1"
+				FILES="$FILES $1"
+			else 
+				echo ERROR! What you given is not a readable file!
+				exit 1 
+			fi
+			;;
+
+		*)
+			if [ -r $1 ]; then
+				echo User gave file $1
+				FILES="$FILES $1"
+			else
+				echo ERROR! What you given is not a file!
+				exit 1
+			fi
+			;;	
+	esac
+	echo what
 	shift
 done
 
@@ -104,37 +123,38 @@ if [ -n "$CURRENCY" ]; then
         # cat $FILE | awk -F';' -v CURRENCY=$CURRENCY '{ if ($3 == CURRENCY) print }'
 	echo For some reason were here
 	echo $CURRENCY
-	FILTER="awk -F';' -v CURRENCY='$CURRENCY' '{ if (\$3 == CURRENCY) print }' | "
+	FILTER="| awk -F';' -v CURRENCY='$CURRENCY' '{ if (\$3 == CURRENCY) print }'"
 fi
 
 ## Date before
 if [ -n "$DATE_BEFORE" ]; then
-    FILTER+="awk -F';' -v DATE_BEFORE='$DATE_BEFORE' '{ if (\$2 < DATE_BEFORE) print }' | "
+    FILTER="$FILTER | awk -F';' -v DATE_BEFORE='$DATE_BEFORE' '{ if (\$2 < DATE_BEFORE) print }'"
 fi
 
 ## Date after
 if [ -n "$DATE_AFTER" ]; then
-    FILTER+="awk -F';' -v DATE_AFTER='$DATE_AFTER' '{ if (\$2 > DATE_AFTER) print }' | "
+    FILTER="$FILTER | awk -F';' -v DATE_AFTER='$DATE_AFTER' '{ if (\$2 > DATE_AFTER) print }'"
 fi
 
-FINALCOMMAND="cat $FILE | $FILTER"
+# TODO!!!! CHECK IF THERE ARE ANY FILES TO UNZIP FIRST
+FINALCOMMAND="gunzip $ZIPPED | cat $FILES $FILTER"
 #eval "$FINALCOMMAND"
 # Command execution
 case $COMMAND in
 	list)
-		FINALCOMMAND+="awk -F';' -v USER='$USER' '{ if (\$1 == USER) print }'"
+		FINALCOMMAND="$FINALCOMMAND | awk -F';' -v USER='$USER' '{ if (\$1 == USER) print }'"
 		;;
 
 	list-currency)
-		FINALCOMMAND+="awk -F';' -v USER='$USER' '{ if (\$1 == USER) currencies[\$3] = 1 } END{for(currency in currencies) print currency}' | sort"
+		FINALCOMMAND="$FINALCOMMAND | awk -F';' -v USER='$USER' '{ if (\$1 == USER) currencies[\$3] = 1 } END{for(currency in currencies) print currency}' | sort"
 		;;
 
 	status)
-		FINALCOMMAND+="awk -F';' -v USER='$USER' '{ if (\$1 == USER) balances[\$3]+=\$4 } END{ for(balance in balances) printf \"%s : %0.4f\n\", balance, balances[balance] }' | sort"
+		FINALCOMMAND="$FINALCOMMAND | awk -F';' -v USER='$USER' '{ if (\$1 == USER) balances[\$3]+=\$4 } END{ for(balance in balances) printf \"%s : %0.4f\n\", balance, balances[balance] }' | sort"
 		;;
 
 	profit)
-		FINALCOMMAND+="awk -F';' -v USER='$USER' -v PROFIT='$XTF_PROFIT' '{ if (\$1 == USER) balances[\$3]+=\$4 } END{ for (balance in balances) if (balances[balance] > 0) printf \"%s : %0.4f\n\", balance, balances[balance] + balances[balance] * (PROFIT / 100); else printf \"%s : %0.4f\n\", balance, balances[balance] }' | sort"
+		FINALCOMMAND="$FINALCOMMAND | awk -F';' -v USER='$USER' -v PROFIT='$XTF_PROFIT' '{ if (\$1 == USER) balances[\$3]+=\$4 } END{ for (balance in balances) if (balances[balance] > 0) printf \"%s : %0.4f\n\", balance, balances[balance] + balances[balance] * (PROFIT / 100); else printf \"%s : %0.4f\n\", balance, balances[balance] }' | sort"
 		;;
 
 	*)
