@@ -1,0 +1,171 @@
+#!/bin/sh
+
+export POSIXLY_CORRECT=yes
+export LC_NUMERIC=en_US.UTF-8
+
+display_help() {
+	cat << EOF
+Description: xtf is a script used for analyzing logs from a crypto exchange.
+
+Usage: xtf [-h|--help] [FILTER] [COMMAND] USER LOG [LOG2 [...]
+
+Author: Michal Pavlíček xpavlim00
+
+Commands: 
+    list - list records for a given user
+    list-currency - displays sorted list of currencies used
+    status - displays the real account balance grouped and sorted by currency
+    profit - displays account balance with fictious profit
+
+Filters:
+    -a DATETIME - records after (excluding) YYYY-MM-DD HH:MM:SS
+    -b DATETIME - records before (excluding)
+    -c CURRENCY - only records for given currency
+
+Help:
+    -h and --help display this help
+EOF
+}
+
+COMMAND="list"
+DATE_BEFORE=""
+DATE_AFTER=""
+CURRENCY=""
+
+if [ -z "$XTF_PROFIT" ]; then
+	export XTF_PROFIT=20
+fi
+
+# Parse filters, help and command
+while [ $# -gt 0 ]; do
+	case $1 in
+
+	-h | --help)
+		display_help
+		exit 0
+		;;
+
+	-a)
+		shift
+		DATE_AFTER=$1
+		shift
+		DATE_AFTER+=" $1"
+		;;
+	
+	-b)
+		shift
+		DATE_BEFORE=$1
+		shift
+		DATE_BEFORE+=" $1"
+		;;
+
+	-c)
+		shift
+		CURRENCY=$1
+		;;
+
+	list | list-currency | status | profit)
+		COMMAND=$1
+		echo The command user gave: $COMMAND 
+		shift
+		break
+		;;
+
+	*)
+		# This means we implicitly use "list" as command
+		break
+		;;
+	esac
+	shift
+done
+
+# Load the user
+USER=$1
+shift
+
+# Load log files
+FILE=""
+while [ $# -gt 0 ]; do
+	if [[ -f $1 ]]; then
+		echo $1 is a file
+		FILE=$1
+	else
+		echo $1 is NOT a file
+	fi
+	shift
+done
+
+
+# Filter application
+FILTER=""
+
+## Currency
+if [ -n "$CURRENCY" ]; then
+        # cat $FILE | awk -F';' -v CURRENCY=$CURRENCY '{ if ($3 == CURRENCY) print }'
+	echo For some reason were here
+	echo $CURRENCY
+	FILTER="awk -F';' -v CURRENCY='$CURRENCY' '{ if (\$3 == CURRENCY) print }' | "
+fi
+
+## Date before
+if [ -n "$DATE_BEFORE" ]; then
+    FILTER+="awk -F';' -v DATE_BEFORE='$DATE_BEFORE' '{ if (\$2 < DATE_BEFORE) print }' | "
+fi
+
+## Date after
+if [ -n "$DATE_AFTER" ]; then
+    FILTER+="awk -F';' -v DATE_AFTER='$DATE_AFTER' '{ if (\$2 > DATE_AFTER) print }' | "
+fi
+
+FINALCOMMAND="cat $FILE | $FILTER"
+#eval "$FINALCOMMAND"
+# Command execution
+case $COMMAND in
+	list)
+		FINALCOMMAND+="awk -F';' -v USER='$USER' '{ if (\$1 == USER) print }'"
+		;;
+
+	list-currency)
+		FINALCOMMAND+="awk -F';' -v USER='$USER' '{ if (\$1 == USER) currencies[\$3] = 1 } END{for(currency in currencies) print currency}' | sort"
+		;;
+
+	status)
+		FINALCOMMAND+="awk -F';' -v USER='$USER' '{ if (\$1 == USER) balances[\$3]+=\$4 } END{ for(balance in balances) printf \"%s : %0.4f\n\", balance, balances[balance] }' | sort"
+		;;
+
+	profit)
+		FINALCOMMAND+="awk -F';' -v USER='$USER' -v PROFIT='$XTF_PROFIT' '{ if (\$1 == USER) balances[\$3]+=\$4 } END{ for (balance in balances) if (balances[balance] > 0) printf \"%s : %0.4f\n\", balance, balances[balance] + balances[balance] * (PROFIT / 100); else printf \"%s : %0.4f\n\", balance, balances[balance] }' | sort"
+		;;
+
+	*)
+		echo something else chosen
+		;;
+esac
+
+eval "$FINALCOMMAND"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
