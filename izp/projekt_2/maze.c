@@ -86,7 +86,7 @@ void enqueue(Queue *queue, Node node)
 {
     if (queue->size == queue->capacity)
     {
-        fprintf(stderr, "Queue is full");
+        fprintf(stderr, "Queue is full. This should not happen.");
         return;
     }
 
@@ -152,7 +152,8 @@ bool isborder(Map *map, int r, int c, int border)
 
     if (!cell)
     {
-        fprintf(stdout, "Something unexpected happened"); // TODO: Figure out what to do here
+        fprintf(stdout, "Something unexpected happened. The result might be wrong."); // TODO: Figure out what to do here
+        return false;
     }
 
     char wall = cell[border];
@@ -174,6 +175,7 @@ int start_border(Map *map, int r, int c)
     if (r > 1 && c > 1 && r < map->rows - 1 && c < map->cols - 1)
     {
         // We are not on the edge of the maze
+        printf("Invalid\n");
         return -1;
     }
 
@@ -632,9 +634,9 @@ void Map_solve(Map *map, int row, int col, int from, char left_right_shortest)
 int main(int argc, char *argv[])
 {
 
-    if (argc < 2)
+    if (argc < 2 || argc > 5)
     {
-        fprintf(stdout, "Invalid\n");
+        fprintf(stdout, "You entered too few or too many arguments. Type './maze --help'.\n");
         return 1;
     }
 
@@ -666,17 +668,11 @@ int main(int argc, char *argv[])
         maze_file = argv[4];
     }
 
-    /*int start_row = 6;
-    int start_col = 1;*/
-
     FILE *file = fopen(maze_file, "r");
-    // FILE *file = fopen("bludiste.txt", "r");
 
     Map map;
 
     map = Map_loader(file);
-
-    // Map_print(&map);
 
     if (strcmp(option, "--test") == 0)
     {
