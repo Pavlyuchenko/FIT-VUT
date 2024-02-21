@@ -66,7 +66,6 @@ while [ $# -gt 0 ]; do
 
 	list | list-currency | status | profit)
 		COMMAND=$1
-		echo The command user gave: $COMMAND 
 		shift
 		break
 		;;
@@ -90,8 +89,8 @@ while [ $# -gt 0 ]; do
 	echo here
 	case $1 in
 		*.gz | *.tgz)
-			if [ -r $1 ]; then
-				echo .gz file: $1
+			if [ -r "$1" ]; then
+				echo .gz file: "$1"
 				ZIPPED="$UNZIP $1"
 				FILES="$FILES $1"
 			else 
@@ -101,8 +100,7 @@ while [ $# -gt 0 ]; do
 			;;
 
 		*)
-			if [ -r $1 ]; then
-				echo User gave file $1
+			if [ -r "$1" ]; then
 				FILES="$FILES $1"
 			else
 				echo ERROR! What you given is not a file!
@@ -121,8 +119,6 @@ FILTER=""
 ## Currency
 if [ -n "$CURRENCY" ]; then
         # cat $FILE | awk -F';' -v CURRENCY=$CURRENCY '{ if ($3 == CURRENCY) print }'
-	echo For some reason were here
-	echo $CURRENCY
 	FILTER="| awk -F';' -v CURRENCY='$CURRENCY' '{ if (\$3 == CURRENCY) print }'"
 fi
 
