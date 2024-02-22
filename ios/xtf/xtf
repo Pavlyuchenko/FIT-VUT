@@ -83,25 +83,25 @@ USER=$1
 shift
 
 # Load log files
-FILES=""
-ZIPPED=""
 INPUT=""
 while [ $# -gt 0 ]; do
 	case $1 in
 		*.gz)
 			if [ -r "$1" ]; then
-				INPUT="$INPUT$(gunzip -c $1 | cat)"
+				INPUT="$INPUT$(gunzip -c "$1" | cat)"
+				INPUT=$(printf "%s" "$INPUT" "\n")
 			else 
-				echo ERROR! What you given is not a readable file!
+				echo ERROR! What you given is not a readable file! What you entered: "$1"
 				exit 1 
 			fi
 			;;
 
 		*)
 			if [ -r "$1" ]; then
-				INPUT="$INPUT$(cat $1)"
+				INPUT="$INPUT$(cat "$1" ; echo)"
+				INPUT=$(printf "%s" "$INPUT" "\n")
 			else
-				echo ERROR! What you given is not a file!
+				echo ERROR! What you given is not a readable file! What you entered: "$1"
 				exit 1
 			fi
 			;;	
@@ -128,12 +128,7 @@ if [ -n "$DATE_AFTER" ]; then
     FILTER="$FILTER | awk -F';' -v DATE_AFTER='$DATE_AFTER' '{ if (\$2 > DATE_AFTER) print }'"
 fi
 
-
-# echo "$INPUT" | awk -F';' '{ print }'
-
-# TODO!!!! CHECK IF THERE ARE ANY FILES TO UNZIP FIRST
 FINALCOMMAND="echo \"$INPUT\" $FILTER"
-#eval "$FINALCOMMAND"
 # Command execution
 case $COMMAND in
 	list)
