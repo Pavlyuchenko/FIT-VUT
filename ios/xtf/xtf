@@ -85,14 +85,12 @@ shift
 # Load log files
 FILES=""
 ZIPPED=""
+INPUT=""
 while [ $# -gt 0 ]; do
-	echo here
 	case $1 in
-		*.gz | *.tgz)
+		*.gz)
 			if [ -r "$1" ]; then
-				echo .gz file: "$1"
-				ZIPPED="$UNZIP $1"
-				FILES="$FILES $1"
+				INPUT="$INPUT$(gunzip -c $1 | cat)"
 			else 
 				echo ERROR! What you given is not a readable file!
 				exit 1 
@@ -101,17 +99,15 @@ while [ $# -gt 0 ]; do
 
 		*)
 			if [ -r "$1" ]; then
-				FILES="$FILES $1"
+				INPUT="$INPUT$(cat $1)"
 			else
 				echo ERROR! What you given is not a file!
 				exit 1
 			fi
 			;;	
 	esac
-	echo what
 	shift
 done
-
 
 # Filter application
 FILTER=""
@@ -132,8 +128,11 @@ if [ -n "$DATE_AFTER" ]; then
     FILTER="$FILTER | awk -F';' -v DATE_AFTER='$DATE_AFTER' '{ if (\$2 > DATE_AFTER) print }'"
 fi
 
+
+# echo "$INPUT" | awk -F';' '{ print }'
+
 # TODO!!!! CHECK IF THERE ARE ANY FILES TO UNZIP FIRST
-FINALCOMMAND="gunzip $ZIPPED | cat $FILES $FILTER"
+FINALCOMMAND="echo \"$INPUT\" $FILTER"
 #eval "$FINALCOMMAND"
 # Command execution
 case $COMMAND in
@@ -158,6 +157,7 @@ case $COMMAND in
 		;;
 esac
 
+echo "$FINALCOMMAND"
 eval "$FINALCOMMAND"
 
 
