@@ -27,6 +27,11 @@ architecture TB of testbench is
     signal dout : std_logic_vector(7 downto 0);
     signal dout_vld : std_logic;
     signal running : boolean := true;
+    
+    --- My additions
+    -- signal clk_count : std_logic := '0';
+    ---
+    
     type generator_state is (IDLE, START, D0, D1, D2, D3, D4, D5, D6, D7, STOP);
     signal din_state : generator_state := IDLE;
 
@@ -94,7 +99,8 @@ begin
         wait for clk_period*5;
         rst <= '0';
         wait for clk_period*5;
-        send_byte("01000111");
+        send_byte("11111111");
+        -- send_byte("01000111");
         wait for clk_period*50;
         send_byte("01010101");
         wait for clk_period*40;
