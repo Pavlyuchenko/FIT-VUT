@@ -25,28 +25,28 @@ begin
     -- Instance of RX FSM
     fsm: entity work.UART_RX_FSM
     port map (
-        CLK             => CLK,
-        RST             => RST,
-        DIN             => DIN,
-        CNT_CLK         => clk_cnt,
-        CNT_BIT         => bit_cnt,
+        CLK              => CLK,
+        RST              => RST,
+        DIN              => DIN,
+        CNT_CLK          => clk_cnt,
+        CNT_BIT          => bit_cnt,
         ACTIVATE_CLK_CNT => activate_clk_cnt,
         ACTIVATE_BIT_CNT => activate_bit_cnt,
-        DATA_VALID      => valid_data
+        DATA_VALID       => valid_data
     );
 
     process (CLK) begin
         if RST = '1' then
             DOUT <= "00000000";
             DOUT_VLD <= '0';
-            clk_cnt <= "00001";
+            clk_cnt <= "00000";
             bit_cnt <= "0000";
         elsif rising_edge(CLK) then
-            DOUT_VLD <= '0'; -- Assuming data is invalid by default
+            DOUT_VLD <= '0';
             if activate_clk_cnt = '1' then
                 clk_cnt <= clk_cnt + 1;
             else 
-                clk_cnt <= "00001";
+                clk_cnt <= "00010"; -- idk why 00010, but otherwise the first bit read happens too late
             end if;
             
             if bit_cnt = "1000" and valid_data = '1' then
@@ -54,37 +54,11 @@ begin
                 bit_cnt <= "0000";
             end if;
 
-            if activate_bit_cnt = '1' and clk_cnt >= "10000" then
-                clk_cnt <= "00001";
-
-                case bit_cnt is
-                    when "0000" =>
-                        bit_cnt <= "0001";
-                        DOUT(0) <= DIN;
-                    when "0001" =>
-                        bit_cnt <= "0010";
-                        DOUT(1) <= DIN;
-                    when "0010" =>
-                        bit_cnt <= "0011";
-                        DOUT(2) <= DIN;
-                    when "0011" =>
-                        bit_cnt <= "0100";
-                        DOUT(3) <= DIN;
-                    when "0100" =>
-                        bit_cnt <= "0101";
-                        DOUT(4) <= DIN;
-                    when "0101" =>
-                        bit_cnt <= "0110";
-                        DOUT(5) <= DIN;
-                    when "0110" =>
-                        bit_cnt <= "0111";
-                        DOUT(6) <= DIN;
-                    when "0111" =>
-                        bit_cnt <= "1000";
-                        DOUT(7) <= DIN;
-                    when others =>
-                        null;
-                end case;
+            if activate_bit_cnt = '1' and clk_cnt >= "01111" then
+                clk_cnt <= "00000";
+		
+		DOUT(conv_integer(bit_cnt)) <= DIN;
+		bit_cnt <= bit_cnt + 1;
             end if;
         end if;
     end process;

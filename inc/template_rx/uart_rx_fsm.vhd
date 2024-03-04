@@ -12,12 +12,12 @@ entity UART_RX_FSM is
 		RST     : in std_logic;
 		DIN     : in std_logic;
 		CNT_CLK : in std_logic_vector(4 downto 0); -- keeps track of how many clock cycles happened (0 - 24)
-		CNT_BIT : in std_logic_vector(3 downto 0); -- tracks how many bits were received (0 - 7)
+		CNT_BIT : in std_logic_vector(3 downto 0); -- tracks how many bits were received (0 - 8)
 		
 		-- Activation bits
 		ACTIVATE_CLK_CNT	: out std_logic;
 		ACTIVATE_BIT_CNT	: out std_logic;
-		DATA_VALID			: out std_logic
+		DATA_VALID		: out std_logic
 	);
 end entity;
 
@@ -41,19 +41,19 @@ process (CLK) begin
 	elsif rising_edge(CLK) then
 		case curr_state is
 			when Idle =>
-				if DIN = '0' then
+				if DIN = '0' then -- DIN 0 => the sender wants to initiate the process
 					curr_state <= Start;
 				end if;
 			when Start =>
-				if CNT_CLK = "11000" then -- 24
+				if CNT_CLK >= "11000" then -- 24 => ignore start cycle and get MIDBIT of 1st data bit
 					curr_state <= Data;
 				end if;
 			when Data =>
-				if CNT_BIT = "1000" then -- 7
+				if CNT_BIT >= "1000" then -- 7 => capture each MIDBIT
 					curr_state <= Stop;
 				end if;
 			when Stop =>
-				if DIN = '1' then
+				if DIN = '1' then -- DIN 1 => process finished
 					curr_state <= Valid;
 				end if;
 			when Valid =>
