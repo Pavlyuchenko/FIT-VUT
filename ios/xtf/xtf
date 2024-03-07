@@ -3,6 +3,10 @@
 export POSIXLY_CORRECT=yes
 export LC_NUMERIC=en_US.UTF-8
 
+# CURRENCY="EUR;USD"
+# eval "cat cryptoexchange-3.log | awk -F';' -v CURRENCY=\"$CURRENCY\" 'BEGIN{ split(CURRENCY, currencies, \";\") } { for (idx in currencies) if (\$3 == currencies[idx]) print }'"
+# exit 0
+
 display_help() {
 	cat << EOF
 Description: xtf is a script used for analyzing logs from a crypto exchange.
@@ -73,7 +77,7 @@ while [ $# -gt 0 ]; do
 
 	-c)
 		shift
-		CURRENCY="$1"
+		CURRENCY="$1;$CURRENCY"
 		;;
 
 	list | list-currency | status | profit)
@@ -131,7 +135,8 @@ FILTER=""
 
 ## Currency
 if [ -n "$CURRENCY" ]; then
-	FILTER="| awk -F';' -v CURRENCY='$CURRENCY' '{ if (\$3 == CURRENCY) print }'"
+	# FILTER="| awk -F';' -v CURRENCY='$CURRENCY' 'BEGIN{ split(CURRENCY, currencies, \";\") } { for (idx in currencies) if (\$3 == currencies[idx]) print }'"
+        FILTER="| awk -F';' -v CURRENCY=\"$CURRENCY\" 'BEGIN{ split(CURRENCY, currencies, \";\") } { for (idx in currencies) if (\$3 == currencies[idx]) print }'"
 fi
 
 ## Date before
