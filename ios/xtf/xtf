@@ -27,7 +27,7 @@ Help:
 EOF
 }
 
-COMMAND="list" # by default, we use list
+COMMAND=""
 DATE_BEFORE=""
 DATE_AFTER=""
 CURRENCY=""
@@ -77,22 +77,29 @@ while [ $# -gt 0 ]; do
 		;;
 
 	list | list-currency | status | profit)
-		COMMAND="$1"
-		shift
-		break
+		if [ -z "$COMMAND" ]; then
+			COMMAND="$1"
+		else 
+			echo "You specified a command twice. This is unspecified." >&2
+			exit 1
+		fi
 		;;
 
 	*)
-		# This means we implicitly use "list" as command
-		break
+		# This will mean we want to load User, or if it's a file, we continue.
+		if [ -r "$1" ]; then
+		       break	
+		fi
+		USER="$1"
 		;;
 	esac
 	shift
 done
 
-# Load the user
-USER="$1"
-shift
+# If no command was specified, we use list
+if [ -z "$COMMAND" ]; then
+	COMMAND="list"
+fi
 
 # Load log files
 INPUT=""
@@ -124,7 +131,6 @@ FILTER=""
 
 ## Currency
 if [ -n "$CURRENCY" ]; then
-        # cat $FILE | awk -F';' -v CURRENCY=$CURRENCY '{ if ($3 == CURRENCY) print }'
 	FILTER="| awk -F';' -v CURRENCY='$CURRENCY' '{ if (\$3 == CURRENCY) print }'"
 fi
 
