@@ -1,11 +1,10 @@
 #!/bin/sh
+# Author: Michal Pavlíček xpavlim00
+# Date:   2024-03-07
+# Description: xtf is a script used for analyzing logs from a (fictional) crypto exchange
 
 export POSIXLY_CORRECT=yes
 export LC_NUMERIC=en_US.UTF-8
-
-# CURRENCY="EUR;USD"
-# eval "cat cryptoexchange-3.log | awk -F';' -v CURRENCY=\"$CURRENCY\" 'BEGIN{ split(CURRENCY, currencies, \";\") } { for (idx in currencies) if (\$3 == currencies[idx]) print }'"
-# exit 0
 
 display_help() {
 	cat << EOF
@@ -31,16 +30,22 @@ Help:
 EOF
 }
 
+# User-entered command
 COMMAND=""
+# User-entered filters
 DATE_BEFORE=""
 DATE_AFTER=""
 CURRENCY=""
 
+# Check if user exported $XTF_PROFIT, else set to 20
 if [ -z "$XTF_PROFIT" ]; then
 	export XTF_PROFIT=20
 fi
 
-# Parse filters, help and command
+# Parse filters, help and command.
+# Implemented extentions:
+#	1) Can be in any order, logs are last
+#	2) Can enter multiple -c filters
 while [ $# -gt 0 ]; do
 	case $1 in
 
@@ -84,7 +89,7 @@ while [ $# -gt 0 ]; do
 		if [ -z "$COMMAND" ]; then
 			COMMAND="$1"
 		else 
-			echo "You specified a command twice. This is unspecified." >&2
+			echo "You gave command twice. This is unspecified." >&2
 			exit 1
 		fi
 		;;
@@ -130,12 +135,11 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-# Filter application
+# Variable that is used for application of filters
 FILTER=""
 
 ## Currency
 if [ -n "$CURRENCY" ]; then
-	# FILTER="| awk -F';' -v CURRENCY='$CURRENCY' 'BEGIN{ split(CURRENCY, currencies, \";\") } { for (idx in currencies) if (\$3 == currencies[idx]) print }'"
         FILTER="| awk -F';' -v CURRENCY=\"$CURRENCY\" 'BEGIN{ split(CURRENCY, currencies, \";\") } { for (idx in currencies) if (\$3 == currencies[idx]) print }'"
 fi
 
@@ -152,9 +156,10 @@ fi
 INPUT="printf \"%b\n\" \"$INPUT\" | awk '/./'"
 
 
-# FINALCOMMAND="echo \"$INPUT\" $FILTER"
+# First we load the contents of files, then apply filters
 FINALCOMMAND="$INPUT $FILTER"
-# Command execution
+
+# Command execution on filtered files contents
 case $COMMAND in
 	list)
 		FINALCOMMAND="$FINALCOMMAND | awk -F';' -v USER='$USER' '{ if (\$1 == USER) print }'"
@@ -171,36 +176,6 @@ case $COMMAND in
 	profit)
 		FINALCOMMAND="$FINALCOMMAND | awk -F';' -v USER='$USER' -v PROFIT='$XTF_PROFIT' '{ if (\$1 == USER) balances[\$3]+=\$4 } END{ for (balance in balances) if (balances[balance] > 0) printf \"%s : %0.4f\n\", balance, balances[balance] + balances[balance] * (PROFIT / 100); else printf \"%s : %0.4f\n\", balance, balances[balance] }' | sort"
 		;;
-
-	*)
-		echo something else chosen
-		;;
 esac
 
 eval "$FINALCOMMAND"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
