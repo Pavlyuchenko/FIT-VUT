@@ -27,7 +27,7 @@ Help:
 EOF
 }
 
-COMMAND="list"
+COMMAND="list" # by default, we use list
 DATE_BEFORE=""
 DATE_AFTER=""
 CURRENCY=""
@@ -47,18 +47,28 @@ while [ $# -gt 0 ]; do
 
 	-a)
 		shift
-		DATE_AFTER="$1"
-		if echo "$DATE_AFTER" | grep -vEq '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'; then
+		if [ -z "$DATE_AFTER" ]; then
+			DATE_AFTER="$1"
+			if echo "$DATE_AFTER" | grep -vEq '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'; then
+				exit 1
+			fi
+		else
+			echo "The filter -a was given twice, which is unspecified." >&2
 			exit 1
 		fi
 		;;
 	
 	-b)
 		shift
-		DATE_BEFORE="$1"
-		if echo "$DATE_BEFORE" | grep -vEq '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'; then
-                        exit 1
-                fi
+		if [ -z "$DATE_BEFORE" ]; then
+			DATE_BEFORE="$1"
+			if echo "$DATE_BEFORE" | grep -vEq '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'; then
+                        	exit 1
+                	fi
+		else
+			echo "The filter -b was given twice, which is unspecified." >&2
+			exit 1
+		fi
 		;;
 
 	-c)
