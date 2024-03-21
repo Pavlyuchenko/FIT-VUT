@@ -38,6 +38,14 @@ def UCS(nodes, OPEN, CLOSE):
         if node[1] < smallest_cost:
             smallest_cost = node[1]
             smallest_cost_node = node
+        elif node[1] == smallest_cost:
+            if node[0][1] < smallest_cost_node[0][1]:
+                smallest_cost = node[1]
+                smallest_cost_node = node
+            elif node[0][1] == smallest_cost_node[0][1]:
+                if node[0][0] < smallest_cost_node[0][0]:
+                    smallest_cost = node[1]
+                    smallest_cost_node = node
 
     OPEN.remove(smallest_cost_node)
     curr = smallest_cost_node
@@ -86,7 +94,7 @@ def UCS(nodes, OPEN, CLOSE):
         print(
             "([%d, %d], %s, [%d, %d])"
             % (node[0][1], node[0][0], node[1], node[2][1], node[2][0]),
-            end="---",
+            end=", ",
         )
 
     # print CLOSE
@@ -97,13 +105,13 @@ def UCS(nodes, OPEN, CLOSE):
         if node[2] is None:
             print(
                 "([%d, %d], %s, NULL)" % (node[0][1], node[0][0], node[1]),
-                end=",",
+                end=", ",
             )
         else:
             print(
                 "([%d, %d], %s, [%d, %d])"
                 % (node[0][1], node[0][0], node[1], node[2][1], node[2][0]),
-                end=",",
+                end=", ",
             )
 
     return UCS(nodes, OPEN, CLOSE)
