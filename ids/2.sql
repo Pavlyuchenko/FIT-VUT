@@ -21,7 +21,7 @@ CREATE TABLE users (
     surname VARCHAR(255) NOT NULL,
     email VARCHAR(255),
     role VARCHAR(255) DEFAULT 'student' CHECK (role IN ('student', 'teacher')),
-    birthNumber VARCHAR(10) NOT NULL,
+    birthNumber VARCHAR(10) NOT NULL, -- added for CHECK, not in ERD
 
     -- This CHECK is for checking the entered birth number
     -- It does basic checks like
@@ -35,7 +35,7 @@ CREATE TABLE users (
         SUBSTR(birthNumber, 5, 2) BETWEEN 1 AND 31 AND
         MOD(TO_NUMBER(SUBSTR(birthNumber, 1, 9)), 11) = TO_NUMBER(SUBSTR(birthNumber, 10, 1))
     ),
-    PRIMARY KEY (UserId)
+    PRIMARY KEY (UserID)
 );
 
 
@@ -115,7 +115,7 @@ VALUES ("IFJa", "Formal Languages and Compilers", "English version of subject IF
 
 -- Create gradedActivity table
 CREATE TABLE gradedActivity (
-    activityId INT GENERATED ALWAYS AS IDENTITY NOT NULL,
+    activityID INT GENERATED ALWAYS AS IDENTITY NOT NULL,
 
     subjectAbbreviation VARCHAR(5) NOT NULL,
     name VARCHAR(255),
@@ -123,7 +123,7 @@ CREATE TABLE gradedActivity (
     minPoints INT DEFAULT 0,   -- min points required to still be able to pass the subject (eg final exam must get at least 25 pts.)
     maxPoints INT DEFAULT 100, -- max points student can get from this graded act.
 
-    PRIMARY KEY (activityId)
+    PRIMARY KEY (activityID)
     FOREIGN KEY (subjectAbbreviation) REFERENCES subjects(abbreviation)
 );
 
@@ -146,8 +146,8 @@ VALUES ("IDS", "Zkouška", "", 25, 60);
 CREATE TABLE enrollment (
     enrollmentID INT GENERATED ALWAYS AS IDENTITY NOT NULL,
 
-    subjectAbbreviation VARCHAR(255) NOT NULL,
     studentID INT NOT NULL,
+    subjectAbbreviation VARCHAR(255) NOT NULL,
     dateEnrolled DATE NOT NULL,
 
     PRIMARY KEY (enrollmentID),
@@ -158,29 +158,29 @@ CREATE TABLE enrollment (
 ------------------------------------------------------------------------------------------
 INSERT INTO enrollment (subjectAbbreviation, studentID, dateEnrolled)
 -- TODO: Check TO_DATE
-VALUES ('IDS', (SELECT userId FROM users WHERE name = 'Michal' ), TO_DATE('12-Jan-2024'))
+VALUES ('IDS', (SELECT userID FROM users WHERE name = 'Michal' ), TO_DATE('12-Jan-2024'))
 
 INSERT INTO enrollment (subjectAbbreviation, studentID, dateEnrolled)
-VALUES ('IDS', (SELECT userId FROM users WHERE birthNumber = '0212155251' ), TO_DATE('01-Jan-2024'))
+VALUES ('IDS', (SELECT userID FROM users WHERE birthNumber = '0212155251' ), TO_DATE('01-Jan-2024'))
 
 INSERT INTO enrollment (subjectAbbreviation, studentID, dateEnrolled)
-VALUES ('IPK', (SELECT userId FROM users WHERE birthNumber = '0212155251' ), TO_DATE('01-Jan-2024'))
+VALUES ('IPK', (SELECT userID FROM users WHERE birthNumber = '0212155251' ), TO_DATE('01-Jan-2024'))
 ------------------------------------------------------------------------------------------
 
 -- Create grade table
 CREATE TABLE grades (
     enrollmentID INT NOT NULL,
-    studentID INT NOT NULL,
+    activityID INT NOT NULL,
     teacherID INT NOT NULL,
     points INT NOT NULL DEFAULT 0, -- Renamed from ER's grade to points. Make more sense imo.
 
     FOREIGN KEY (enrollmentID) REFERENCES enrollment(enrollmentID),
-    FOREIGN KEY (studentID) REFERENCES students(userID),
+    FOREIGN KEY (activityID) REFERENCES gradedActivity(activityID),
     FOREIGN KEY (teacherID) REFERENCES teachers(userID)
 );
 
 ------------------------------------------------------------------------------------------
-INSERT INTO grades(enrollmentID, studentID, teacherID, points)
+INSERT INTO grades(enrollmentID, activityID, teacherID, points)
 -- TODO: might be wrong again
 VALUES ((SELECT enrollmentID FROM enrollment WHERE studentID = 1) 1, 1, 5);
 ------------------------------------------------------------------------------------------
@@ -188,8 +188,8 @@ VALUES ((SELECT enrollmentID FROM enrollment WHERE studentID = 1) 1, 1, 5);
 
 -- Create teachingSubjects table
 CREATE TABLE teachingSubjects (
-    subjectAbbreviation VARCHAR(255) NOT NULL,
     teacherID INT NOT NULL,
+    subjectAbbreviation VARCHAR(255) NOT NULL,
     position VARCHAR(100) DEFAULT 'TA' NOT NULL CHECK (position IN ('TA', 'Guarantor', 'Lecturer')), -- Teaching Assistant
     
     FOREIGN KEY (subjectAbbreviation) REFERENCES subjects(abbreviation),
