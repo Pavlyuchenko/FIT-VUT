@@ -5,7 +5,7 @@ DROP TABLE teachers CASCADE CONSTRAINTS;
 DROP TABLE subjects CASCADE CONSTRAINTS;
 DROP TABLE gradedActivity CASCADE CONSTRAINTS;
 DROP TABLE enrollment CASCADE CONSTRAINTS;
-DROP TABLE grade CASCADE CONSTRAINTS;
+DROP TABLE grades CASCADE CONSTRAINTS;
 DROP TABLE teachingSubjects CASCADE CONSTRAINTS;
 
 -- We chose to split the generalisation/specialisation into 3 tables.
@@ -40,7 +40,7 @@ CREATE TABLE users (
 
 
 CREATE TABLE students (
-    userID INT NOT NULL,
+    userID INT PRIMARY KEY NOT NULL,
 
     yearEnrolled INT NOT NULL,
     creditsGained INT DEFAULT 0,
@@ -53,9 +53,8 @@ CREATE TABLE students (
 ------------------------------------------------------------------------------------------
 INSERT INTO users (name, surname, email, role, birthNumber)
 VALUES ('Michal', 'Pavlíček', 'xpavlim00@fit.vutbr.cz', 'student', '0212155262');
--- TODO: Check if userID can be given like this
 INSERT INTO students (yearEnrolled, userID)
-VALUES (2023, 1);
+VALUES (2023, (SELECT userID FROM users WHERE birthNumber = '0212155262'));
 
 INSERT INTO users (name, surname, email, role, birthNumber)
 VALUES ('Tomáš', 'Vlach', 'xvlach24@fit.vutbr.cz', 'student', '0212155251');
@@ -65,7 +64,7 @@ VALUES (2001, (SELECT userID FROM users WHERE birthNumber = '0212155251'));
 
 
 CREATE TABLE teachers (
-    userID INT NOT NULL,
+    userID INT PRIMARY KEY NOT NULL,
 
     title VARCHAR(100) DEFAULT 'N/A',
 
@@ -76,16 +75,20 @@ CREATE TABLE teachers (
 INSERT INTO users (name, surname, email, role, birthNumber)
 VALUES ('Vladimír', 'Bartík', 'bartik@fit.vutbr.cz', 'teacher', '0212155273');
 INSERT INTO teachers (title, userID)
-VALUES ("Ing., Ph.D.", (SELECT userID FROM users WHERE birthNumber = '0212155273'));
+SELECT 'Ing., Ph.D.', userID
+FROM users
+WHERE birthNumber = '0212155273';
 
 INSERT INTO users (name, surname, email, role, birthNumber)
 VALUES ('Marek', 'Rychlý', 'rychly@fit.vutbr.cz', 'teacher', '0212155284');
 INSERT INTO teachers (title, userID)
-VALUES ("RNDr., Ph.D.", (SELECT userID FROM users WHERE birthNumber = '0212155284'));
+SELECT 'RNDr., Ph.D.', userID
+FROM users
+WHERE birthNumber = '0212155284';
 ------------------------------------------------------------------------------------------
 
 CREATE TABLE subjects (
-    abbreviation VARCHAR(5) NOT NULL UNIQUE CHECK (LENGTH(abbreviation) == 3 OR LENGTH(abbreviation) == 4),
+    abbreviation VARCHAR(5) NOT NULL CHECK (LENGTH(abbreviation) = 3 OR LENGTH(abbreviation) = 4),
 
     name VARCHAR(255),
     description VARCHAR(2550),
@@ -100,16 +103,16 @@ CREATE TABLE subjects (
 
 ------------------------------------------------------------------------------------------
 INSERT INTO subjects (abbreviation, name, description, ECTS, isMandatory)
-VALUES ("IDS", "Databázové systémy", "Předmět zabývající se databázemi", 5, 1);
+VALUES ('IDS', 'Databázové systémy', 'Předmět zabývající se databázemi', 5, 1);
 
 INSERT INTO subjects (abbreviation, name, description, ECTS, isMandatory)
-VALUES ("IPK", "Počítačové komunikace a sítě", "Předmět zabývající se síťovými protokoly", 4, 1);
+VALUES ('IPK', 'Počítačové komunikace a sítě', 'Předmět zabývající se síťovými protokoly', 4, 1);
 
 INSERT INTO subjects (abbreviation, name, description, ECTS)
-VALUES ("IJC", "Jazyk C", "Předmět prohlubující znalosti jazyka C", 5);
+VALUES ('IJC', 'Jazyk C', 'Předmět prohlubující znalosti jazyka C', 5);
 
 INSERT INTO subjects (abbreviation, name, description, ECTS, language, isMandatory)
-VALUES ("IFJa", "Formal Languages and Compilers", "English version of subject IFJ", 4, 1, "English");
+VALUES ('IFJa', 'Formal Languages and Compilers', 'English version of subject IFJ', 4, 'English', 1);
 ------------------------------------------------------------------------------------------
 
 
@@ -123,23 +126,23 @@ CREATE TABLE gradedActivity (
     minPoints INT DEFAULT 0,   -- min points required to still be able to pass the subject (eg final exam must get at least 25 pts.)
     maxPoints INT DEFAULT 100, -- max points student can get from this graded act.
 
-    PRIMARY KEY (activityID)
+    PRIMARY KEY (activityID),
     FOREIGN KEY (subjectAbbreviation) REFERENCES subjects(abbreviation)
 );
 
 
 ------------------------------------------------------------------------------------------
 INSERT INTO gradedActivity (subjectAbbreviation, name, description, minPoints, maxPoints)
-VALUES ("IDS", "Projekt část 1.", "Vytvořit ER Diagram", 0, 5);
+VALUES ('IDS', 'Projekt část 1.', 'Vytvořit ER Diagram', 0, 5);
 
 INSERT INTO gradedActivity (subjectAbbreviation, name, description, minPoints, maxPoints)
-VALUES ("IDS", "Projekt část 2.", "Vytvořit základní SQL soubor", 0, 5);
+VALUES ('IDS', 'Projekt část 2.', 'Vytvořit základní SQL soubor', 0, 5);
 
 INSERT INTO gradedActivity (subjectAbbreviation, name, description, minPoints, maxPoints)
-VALUES ("IDS", "Půlsemestrální zkouška", "Do 6. prezentace včetně", 0, 20);
+VALUES ('IDS', 'Půlsemestrální zkouška', 'Do 6. prezentace včetně', 0, 20);
 
 INSERT INTO gradedActivity (subjectAbbreviation, name, description, minPoints, maxPoints)
-VALUES ("IDS", "Zkouška", "", 25, 60);
+VALUES ('IDS', 'Zkouška', 'Finální zkouška', 25, 60);
 ------------------------------------------------------------------------------------------
 
 
@@ -158,13 +161,13 @@ CREATE TABLE enrollment (
 ------------------------------------------------------------------------------------------
 INSERT INTO enrollment (subjectAbbreviation, studentID, dateEnrolled)
 -- TODO: Check TO_DATE
-VALUES ('IDS', (SELECT userID FROM users WHERE name = 'Michal' ), TO_DATE('12-Jan-2024'))
+VALUES ('IDS', (SELECT userID FROM users WHERE name = 'Michal' ), TO_DATE('12-Jan-2024'));
 
 INSERT INTO enrollment (subjectAbbreviation, studentID, dateEnrolled)
-VALUES ('IDS', (SELECT userID FROM users WHERE birthNumber = '0212155251' ), TO_DATE('01-Jan-2024'))
+VALUES ('IDS', (SELECT userID FROM users WHERE birthNumber = '0212155251' ), TO_DATE('01-Jan-2024'));
 
 INSERT INTO enrollment (subjectAbbreviation, studentID, dateEnrolled)
-VALUES ('IPK', (SELECT userID FROM users WHERE birthNumber = '0212155251' ), TO_DATE('01-Jan-2024'))
+VALUES ('IPK', (SELECT userID FROM users WHERE birthNumber = '0212155251' ), TO_DATE('01-Jan-2024'));
 ------------------------------------------------------------------------------------------
 
 -- Create grade table
@@ -172,8 +175,9 @@ CREATE TABLE grades (
     enrollmentID INT NOT NULL,
     activityID INT NOT NULL,
     teacherID INT NOT NULL,
-    points INT NOT NULL DEFAULT 0, -- Renamed from ER's grade to points. Make more sense imo.
+    points INT DEFAULT 0 NOT NULL, -- Renamed from ER's grade to points. Make more sense imo.
 
+    PRIMARY KEY (enrollmentID, activityID), -- Once per student per activity
     FOREIGN KEY (enrollmentID) REFERENCES enrollment(enrollmentID),
     FOREIGN KEY (activityID) REFERENCES gradedActivity(activityID),
     FOREIGN KEY (teacherID) REFERENCES teachers(userID)
@@ -181,8 +185,9 @@ CREATE TABLE grades (
 
 ------------------------------------------------------------------------------------------
 INSERT INTO grades(enrollmentID, activityID, teacherID, points)
--- TODO: might be wrong again
-VALUES ((SELECT enrollmentID FROM enrollment WHERE studentID = 1) 1, 1, 5);
+-- insert all values with select 
+VALUES ((SELECT enrollmentID FROM enrollment WHERE studentID = (SELECT userID FROM users WHERE name = 'Michal') AND subjectAbbreviation = 'IDS'), 
+(SELECT activityID FROM gradedActivity WHERE subjectAbbreviation = 'IDS' AND name = 'Projekt část 1.'), (SELECT userID FROM users WHERE surname = 'Bartík'), 5);
 ------------------------------------------------------------------------------------------
 
 
