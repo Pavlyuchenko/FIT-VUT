@@ -1,10 +1,10 @@
 import math
 
 attributes = {
-    "vhkost": ["nizka", "stredni", "vysoka"],
-    "teplota": ["pracovni", "vikend", "svatek"],
-    "den": ["jaro", "leto", "podzim", "zima"],
-    "obdobi": ["mala", "velka"],
+    "teplota": ["nizka", "stredni", "vysoka"],
+    "den": ["pracovni", "vikend", "svatek"],
+    "obdobi": ["jaro", "leto", "podzim", "zima"],
+    "vkhost": ["mala", "velka"],
 }
 
 classes = {"Nizka", "Stredni", "Velka"}
@@ -136,39 +136,54 @@ objects = [
 def entropy(objects, attribute, value=None):
     entropy = 0
 
-    num_classes = [0, 0, 0]
-    for row in objects:
-        if value is not None and row[attribute] != value:
-            continue
-        if row["classes"] == "Nizka":
-            num_classes[0] += 1
-        elif row["classes"] == "Stredni":
-            num_classes[1] += 1
-        else:
-            num_classes[2] += 1
+    if value is not None:
+        objects = [obj for obj in objects if obj[attribute] == value]
 
-    print(num_classes)
-    print(sum(num_classes))
+    for c in classes:
+        p = len([obj for obj in objects if obj["classes"] == c]) / len(objects)
+        if p != 0:
+            entropy -= p * math.log2(p)
 
-    for _class in num_classes:
-        entropy -= (_class / sum(num_classes)) * math.log2(_class / sum(num_classes))
-
-    return entropy
+    return entropy, len(objects)
 
 
-print(entropy(objects, "teplota", "nizka"))
-print("---------")
-print(entropy(objects, "teplota", "stredni"))
-print("---------")
-print(entropy(objects, "teplota", "vysoka"))
-print("---------")
-print(entropy(objects, "den"))
+total_entropy = 1.3709505944546687
 
-e1 = entropy(objects, "teplota", "nizka")
-e2 = entropy(objects, "teplota", "stredni")
-e3 = entropy(objects, "teplota", "vysoka")
-es = entropy(objects, "den")
+e_t1, c_t1 = entropy(objects, "teplota", "nizka")
+e_t2, c_t2 = entropy(objects, "teplota", "stredni")
+e_t3, c_t3 = entropy(objects, "teplota", "vysoka")
 
+e_d1, c_d1 = entropy(objects, "den", "pracovni")
+e_d2, c_d2 = entropy(objects, "den", "vikend")
+e_d3, c_d3 = entropy(objects, "den", "svatek")
+
+e_o1, c_o1 = entropy(objects, "obdobi", "jaro")
+e_o2, c_o2 = entropy(objects, "obdobi", "leto")
+e_o3, c_o3 = entropy(objects, "obdobi", "podzim")
+e_o4, c_o4 = entropy(objects, "obdobi", "zima")
+
+e_v1, c_v1 = entropy(objects, "vhkost", "mala")
+e_v2, c_v2 = entropy(objects, "vhkost", "velka")
+
+
+print()
 # info_gain
-e = es - 6 / 15 * e1 - 6 / 15 * e2 - 3 / 15 * e3
-print(e)
+e = total_entropy - c_t1 / 15 * e_t1 - c_t2 / 15 * e_t2 - c_t3 / 15 * e_t3
+print("I_G(teplota) = " + str(e))
+
+e = total_entropy - c_d1 / 15 * e_d1 - c_d2 / 15 * e_d2 - c_d3 / 15 * e_d3
+print("I_G(den) = " + str(e))
+
+e = (
+    total_entropy
+    - c_o1 / 15 * e_o1
+    - c_o2 / 15 * e_o2
+    - c_o3 / 15 * e_o3
+    - c_o4 / 15 * e_o4
+)
+print("I_G(obdobi) = " + str(e))
+
+e = total_entropy - c_v1 / 15 * e_v1 - c_v2 / 15 * e_v2
+print("I_G(vhkost) = " + str(e))
+
+# I_G(den) has the highest information gain => split by den
