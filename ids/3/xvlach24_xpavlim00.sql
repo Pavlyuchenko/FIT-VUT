@@ -60,6 +60,21 @@ INSERT INTO users (name, surname, email, role, birthNumber)
 VALUES ('Tomáš', 'Vlach', 'xvlach24@fit.vutbr.cz', 'student', '0212155251');
 INSERT INTO students (yearEnrolled, userID)
 VALUES (2001, (SELECT userID FROM users WHERE birthNumber = '0212155251'));
+
+INSERT INTO users (name, surname, email, role, birthNumber)
+VALUES ('Jiří', 'Hojný', 'xhojny85@fit.vutbr.cz', 'student', '0212155240');
+INSERT INTO students (yearEnrolled, userID)
+VALUES (1999, (SELECT userID FROM users WHERE birthNumber = '0212155240'));
+
+INSERT INTO users (name, surname, email, role, birthNumber)
+VALUES ('Vladimír', 'Pospíšil', 'xpospi08@fit.vutbr.cz', 'student', '0212155229');
+INSERT INTO students (yearEnrolled, userID)
+VALUES (2001, (SELECT userID FROM users WHERE birthNumber = '0212155229'));
+
+INSERT INTO users (name, surname, email, role, birthNumber)
+VALUES ('František', 'Svoboda', 'xsvobo88@fit.vutbr.cz', 'student', '0212155218');
+INSERT INTO students (yearEnrolled, userID)
+VALUES (2000, (SELECT userID FROM users WHERE birthNumber = '0212155218'));
 ------------------------------------------------------------------------------------------
 
 
@@ -85,6 +100,27 @@ INSERT INTO teachers (title, userID)
 SELECT 'RNDr., Ph.D.', userID
 FROM users
 WHERE birthNumber = '0212155284';
+
+INSERT INTO users (name, surname, email, role, birthNumber)
+VALUES ('Miloš', 'Musil', 'imusilm@fit.vutbr.cz', 'teacher', '0212155295');
+INSERT INTO teachers (title, userID)
+SELECT 'Ing., Ph.D.', userID
+FROM users
+WHERE birthNumber = '0212155295';
+
+INSERT INTO users (name, surname, email, role, birthNumber)
+VALUES ('Ondřej', 'Ryšavý', 'rysavy@fit.vutbr.cz', 'teacher', '0212155306');
+INSERT INTO teachers (title, userID)
+SELECT 'doc. Ing, Ph.D.', userID
+FROM users
+WHERE birthNumber = '0212155306';
+
+INSERT INTO users (name, surname, email, role, birthNumber)
+VALUES ('Vladimír', 'Veselý', 'veselyv@fit.vutbr.cz', 'teacher', '0212155317');
+INSERT INTO teachers (title, userID)
+SELECT 'Ing., Ph.D.', userID
+FROM users
+WHERE birthNumber = '0212155317';
 ------------------------------------------------------------------------------------------
 
 CREATE TABLE subjects (
@@ -145,7 +181,10 @@ INSERT INTO gradedActivity (subjectAbbreviation, name, description, minPoints, m
 VALUES ('IDS', 'Zkouška', 'Finální zkouška', 25, 60);
 
 INSERT INTO gradedActivity (subjectAbbreviation, name, description, minPoints, maxPoints)
-VALUES ('IPK', 'Projekt 1.', 'Project 1.', 0, 20);
+VALUES ('IPK', 'Projekt 1.', 'UDP/TCP Chat Client using the protocol IPK24Chat', 0, 20);
+
+INSERT INTO gradedActivity (subjectAbbreviation, name, description, minPoints, maxPoints)
+VALUES ('IPK', 'Projekt 2.', 'A network sniffer', 0, 20);
 ------------------------------------------------------------------------------------------
 
 
@@ -163,11 +202,13 @@ CREATE TABLE enrollment (
 
 ------------------------------------------------------------------------------------------
 INSERT INTO enrollment (subjectAbbreviation, studentID, dateEnrolled)
--- TODO: Check TO_DATE
 VALUES ('IDS', (SELECT userID FROM users WHERE name = 'Michal' ), TO_DATE('12-Jan-2024'));
 
 INSERT INTO enrollment (subjectAbbreviation, studentID, dateEnrolled)
 VALUES ('IPK', (SELECT userID FROM users WHERE name = 'Michal' ), TO_DATE('01-Jan-2024'));
+
+INSERT INTO enrollment (subjectAbbreviation, studentID, dateEnrolled)
+VALUES ('IFJa', (SELECT userID FROM users WHERE name = 'Michal' ), TO_DATE('30-Dec-2023'));
 
 INSERT INTO enrollment (subjectAbbreviation, studentID, dateEnrolled)
 VALUES ('IDS', (SELECT userID FROM users WHERE name = 'Tomáš' ), TO_DATE('01-Jan-2024'));
@@ -200,19 +241,19 @@ VALUES ((SELECT enrollmentID FROM enrollment WHERE studentID = (SELECT userID FR
 
 INSERT INTO grades(enrollmentID, activityID, teacherID, points)
 VALUES ((SELECT enrollmentID FROM enrollment WHERE studentID = (SELECT userID FROM users WHERE name = 'Tomáš') AND subjectAbbreviation = 'IDS'), 
-(SELECT activityID FROM gradedActivity WHERE subjectAbbreviation = 'IDS' AND name = 'Projekt část 1.'), (SELECT userID FROM users WHERE surname = 'Bartík'), 5);
+(SELECT activityID FROM gradedActivity WHERE subjectAbbreviation = 'IDS' AND name = 'Projekt část 1.'), (SELECT userID FROM users WHERE surname = 'Bartík'), 4);
 
 INSERT INTO grades(enrollmentID, activityID, teacherID, points)
 VALUES ((SELECT enrollmentID FROM enrollment WHERE studentID = (SELECT userID FROM users WHERE name = 'Michal') AND subjectAbbreviation = 'IDS'), 
-(SELECT activityID FROM gradedActivity WHERE subjectAbbreviation = 'IDS' AND name = 'Projekt část 2.'), (SELECT userID FROM users WHERE surname = 'Bartík'), 5);
+(SELECT activityID FROM gradedActivity WHERE subjectAbbreviation = 'IDS' AND name = 'Projekt část 2.'), (SELECT userID FROM users WHERE surname = 'Bartík'), 3);
 
 INSERT INTO grades(enrollmentID, activityID, teacherID, points)
 VALUES ((SELECT enrollmentID FROM enrollment WHERE studentID = (SELECT userID FROM users WHERE name = 'Tomáš') AND subjectAbbreviation = 'IDS'), 
-(SELECT activityID FROM gradedActivity WHERE subjectAbbreviation = 'IDS' AND name = 'Projekt část 2.'), (SELECT userID FROM users WHERE surname = 'Bartík'), 5);
+(SELECT activityID FROM gradedActivity WHERE subjectAbbreviation = 'IDS' AND name = 'Projekt část 2.'), (SELECT userID FROM users WHERE surname = 'Bartík'), 4);
 
 INSERT INTO grades(enrollmentID, activityID, teacherID, points)
 VALUES ((SELECT enrollmentID FROM enrollment WHERE studentID = (SELECT userID FROM users WHERE name = 'Michal') AND subjectAbbreviation = 'IPK'), 
-(SELECT activityID FROM gradedActivity WHERE subjectAbbreviation = 'IPK' AND name = 'Projekt 1.'), (SELECT userID FROM users WHERE surname = 'Bartík'), 20);
+(SELECT activityID FROM gradedActivity WHERE subjectAbbreviation = 'IPK' AND name = 'Projekt 1.'), (SELECT userID FROM users WHERE surname = 'Bartík'), 17);
 ------------------------------------------------------------------------------------------
 
 
@@ -232,6 +273,15 @@ VALUES ('IDS', (SELECT userID FROM users WHERE surname = 'Bartík'), 'Guarantor'
 
 INSERT INTO teachingSubjects(subjectAbbreviation, teacherID, position)
 VALUES ('IDS', (SELECT userID FROM users WHERE surname = 'Rychlý'), 'Lecturer');
+
+INSERT INTO teachingSubjects(subjectAbbreviation, teacherID, position)
+VALUES ('IDS', (SELECT userID FROM users WHERE surname = 'Musil'), 'Lecturer');
+
+INSERT INTO teachingSubjects(subjectAbbreviation, teacherID, position)
+VALUES ('IPK', (SELECT userID FROM users WHERE surname = 'Ryšavý'), 'Guarantor');
+
+INSERT INTO teachingSubjects(subjectAbbreviation, teacherID, position)
+VALUES ('IPK', (SELECT userID FROM users WHERE surname = 'Veselý'), 'Lecturer');
 ------------------------------------------------------------------------------------------
 
 
@@ -248,6 +298,15 @@ SELECT users.name, users.surname, students.yearenrolled
 FROM users 
 INNER JOIN students ON users.userid = students.userid;
 
+-- SELECT all graded activities for subject IDS
+SELECT subjects.abbreviation, subjects.name AS subject_name,
+       gradedactivity.name AS graded_assignment, gradedactivity.description,
+       gradedactivity.minpoints, gradedactivity.maxpoints
+FROM gradedactivity
+INNER JOIN subjects ON gradedactivity.subjectabbreviation = subjects.abbreviation
+WHERE gradedactivity.subjectabbreviation = 'IDS';
+
+
 ------------------------------------------------------------------------------------------
 ---- Three join SELECT queries
 ------------------------------------------------------------------------------------------
@@ -257,29 +316,55 @@ FROM users
 INNER JOIN students ON users.userid = students.userid 
 INNER JOIN enrollment ON students.userid = enrollment.studentid;
 
+-- SELECT which teachers teach which subject
+SELECT users.name, users.surname, subjects.abbreviation
+FROM users
+INNER JOIN teachers ON users.userid = teachers.userid
+INNER JOIN teachingsubjects ON teachers.userid = teachingsubjects.teacherid
+INNER JOIN subjects ON teachingsubjects.subjectabbreviation = subjects.abbreviation;
+
 ------------------------------------------------------------------------------------------
 ---- GROUP BY queries
 ------------------------------------------------------------------------------------------
--- SELECT subject abbreviations and amount of students enrolled from enrollment
-SELECT enrollment.subjectabbreviation, COUNT(users.userid) 
+-- SELECT subject abbreviations and amount of students enrolled in a subject
+SELECT enrollment.subjectabbreviation, COUNT(users.userid) AS num_students
 FROM users 
 INNER JOIN students ON users.userid = students.userid 
 INNER JOIN enrollment ON students.userid = enrollment.studentid 
 GROUP BY enrollment.subjectabbreviation;
 
--- SELECT graded activity description and amount of grades given to students
-SELECT gradedactivity.name, COUNT(grades.points)
+-- SELECT graded activities (projects, exams) and their average grade
+SELECT gradedactivity.name, COUNT(grades.points) AS num_grades, AVG(grades.points) AS avg_grade
 FROM grades
 LEFT JOIN gradedactivity ON grades.activityid = gradedactivity.activityid
 GROUP BY gradedactivity.name;
 
+-- SELECT subjects where there is 2 or less teachers teaching it
+SELECT subjects.abbreviation, COUNT(teachingsubjects.teacherid) AS num_teachers
+FROM subjects
+LEFT JOIN teachingsubjects ON subjects.abbreviation = teachingsubjects.subjectabbreviation
+GROUP BY subjects.abbreviation
+HAVING COUNT(teachingsubjects.teacherid) <= 2;
+
 ------------------------------------------------------------------------------------------
 ---- EXISTS queries
 ------------------------------------------------------------------------------------------
+-- SELECT all students, that have more than 10 points in any graded activity
+SELECT users.name, users.surname
+FROM users
+INNER JOIN students ON users.userID = students.userID
+INNER JOIN enrollment ON students.userID = enrollment.studentID
+WHERE EXISTS (
+    SELECT *
+    FROM grades
+    WHERE enrollment.enrollmentID = grades.enrollmentID
+    AND grades.points > 10
+);
+
 -- SELECT all usesrs that are students and are enrolled in a course
 SELECT users.name, users.surname
 FROM users
-WHERE EXISTS(
+WHERE EXISTS (
     SELECT *
     FROM students
     WHERE users.userID = students.userid
@@ -293,13 +378,26 @@ AND EXISTS (
 ------------------------------------------------------------------------------------------
 ---- IN queries
 ------------------------------------------------------------------------------------------
--- SELECT all users and count the amount of mandatory subject they are enrolled in
-SELECT users.userid, users.name, users.surname, count(users.userid)
+-- SELECT all users and count the amount of mandatory subjects they are enrolled in
+SELECT users.name, users.surname, COUNT(enrollment.subjectabbreviation) AS num_mandatory_subjects
 FROM users
-INNER JOIN enrollment ON users.userID = enrollment.studentid
+INNER JOIN students ON users.userID = students.userID
+INNER JOIN enrollment ON students.userID = enrollment.studentID
 WHERE enrollment.subjectabbreviation IN (
     SELECT subjects.abbreviation
     FROM subjects
     WHERE subjects.ismandatory = 1
 )
-GROUP BY users.userid, users.name, users.surname;
+GROUP BY users.name, users.surname;
+
+-- SELECT all subjects for which the student with surname "Pavlíček" has enrolled in in the year 2024
+SELECT subjects.abbreviation, subjects.name
+FROM subjects
+WHERE subjects.abbreviation IN (
+    SELECT enrollment.subjectabbreviation
+    FROM enrollment
+    INNER JOIN students ON enrollment.studentID = students.userID
+    INNER JOIN users ON students.userID = users.userID
+    WHERE users.surname = 'Pavlíček'
+    AND TO_CHAR(enrollment.dateenrolled, 'YYYY') = '2024'
+);
