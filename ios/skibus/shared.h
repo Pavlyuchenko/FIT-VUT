@@ -1,3 +1,9 @@
+/**
+ * @file shared.h
+ * @brief File containing shared memory operations.
+ * @author Michal Pavlíček xpavlim00
+ */
+
 #ifndef SHARED_H
 #define SHARED_H
 

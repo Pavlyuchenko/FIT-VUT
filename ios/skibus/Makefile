@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=gnu99
+CFLAGS = -std=gnu99 -Wall -Wextra -Werror -pedantic
 LDFLAGS = -pthread -lrt
 
 # List all your source files here

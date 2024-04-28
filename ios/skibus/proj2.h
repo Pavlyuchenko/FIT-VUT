@@ -1,9 +1,14 @@
+/**
+ * @file proj2.h
+ * @brief Main file for the skibus problem
+ * @author Michal Pavlíček xpavlim00
+ */
+
 #ifndef PROJ2_H
 #define PROJ2_H
 
 #include <stdio.h>
 #include <stdlib.h>
-// INCLUDE File
 
 #include <sys/types.h> // pid_t
 #include <unistd.h>    // fork, getpid
@@ -20,5 +25,7 @@
 #include "actors.h"
 
 #define OUTPUT_FILE "proj2.out"
+
+void signal_handler(int signum);
 
 #endif // PROJ2_H

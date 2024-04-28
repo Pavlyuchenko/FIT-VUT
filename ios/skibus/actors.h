@@ -1,3 +1,9 @@
+/**
+ * @file actors.h
+ * @brief File containing two main processes implemenations: skibus and skier.
+ * @author Michal Pavlíček xpavlim00
+ */
+
 #ifndef ACTORS_H
 #define ACTORS_H
 
@@ -21,8 +27,18 @@
 #define BUS_LEAVE_FINAL "%d: BUS: leaving final\n"
 #define BUS_FINISH "%d: BUS: finish\n"
 
+/**
+ * @brief Main process for skibus.
+ * @param shared Shared variables.
+ * @param args CLI arguments.
+ */
 void skibus_process(SharedVars *shared, CLIArguments args);
 
+/**
+ * @brief Main process for skier.
+ * @param shared Shared variables.
+ * @param args CLI arguments.
+ */
 void skier_process(SharedVars *shared, CLIArguments args, int skier_id);
 
 #endif // ACTORS_H

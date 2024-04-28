@@ -138,6 +138,8 @@ void skier_process(SharedVars *shared, CLIArguments args, int skier_id)
     fprintf(output, SKIER_GOING_TO_SKI, ++(*shared->A), skier_id);
     unlock_sem(shared->write_sync);
 
+    // if no skiers are left on the bus, let the bus know
+    // else let another skier off
     if (*shared->num_skiers_onboard == 0)
     {
         unlock_sem(shared->all_aboard);

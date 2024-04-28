@@ -1,25 +1,13 @@
 /**
  * FIT VUT IOS Project 2
  * Name: Synchronization Skibus, inspired by Allen B. Downey: The Little Book of Semaphores (The Senate Bus problem)
- * Description: Implementation of a solution to the synchronization problem of the Skibus.
- * Author: Michal Pavlíček xpavlim00
+ * @desc: Implementation of a solution to the synchronization problem of the Skibus.
+ * @author: Michal Pavlíček xpavlim00
  */
 
 #include "proj2.h"
 
 SharedVars shared;
-
-void signal_handler(int signum)
-{
-    if (signum == SIGINT || signum == SIGKILL)
-    {
-        destroy_semaphores(&shared);
-        unmap_shared_memory(&shared);
-        fclose(output);
-
-        exit(0);
-    }
-}
 
 int main(int argc, char *argv[])
 {
@@ -27,7 +15,7 @@ int main(int argc, char *argv[])
 
     output = fopen(OUTPUT_FILE, "w");
 
-    setvbuf(stdout, NULL, _IONBF, 0);
+    // disable buffering
     setvbuf(output, NULL, _IONBF, 0);
 
     map_shared_memory(&shared);
@@ -38,8 +26,6 @@ int main(int argc, char *argv[])
 
     *shared.A = 0;
     *shared.num_skiers_onboard = 0;
-
-    // craete shared->waiting as an array of pointers to int
     *shared.waiting = 0;
 
     // create skibus process
@@ -52,7 +38,6 @@ int main(int argc, char *argv[])
     else if (skibus_pid == 0)
     {
         skibus_process(&shared, cli_args);
-
         exit(0);
     }
 
@@ -80,8 +65,26 @@ int main(int argc, char *argv[])
         wait(NULL);
     }
 
-    destroy_semaphores(&shared);
-    unmap_shared_memory(&shared);
+    if (destroy_semaphores(&shared) == -1)
+    {
+        return 1;
+    }
+    if (unmap_shared_memory(&shared) == -1)
+    {
+        return 1;
+    }
 
     return 0;
+}
+
+void signal_handler(int signum)
+{
+    if (signum == SIGINT || signum == SIGKILL)
+    {
+        destroy_semaphores(&shared);
+        unmap_shared_memory(&shared);
+        fclose(output);
+
+        exit(0);
+    }
 }

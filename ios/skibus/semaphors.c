@@ -1,6 +1,6 @@
 #include "semaphors.h"
 
-int *create_semaphores(SharedVars *shared)
+int create_semaphores(SharedVars *shared)
 {
     shared->write_sync = sem_open("/xpavlim00.ios.proj2.write_sync", O_CREAT | O_EXCL, 0666, 1);
     shared->mutex = sem_open("/xpavlim00.ios.proj2.mutex", O_CREAT | O_EXCL, 0666, 1);
@@ -17,7 +17,7 @@ int *create_semaphores(SharedVars *shared)
         shared->bus_stops[i] = sem_open(semaphore_name, O_CREAT | O_EXCL, 0666, 0);
     }
 
-    return 0; // success
+    return 0;
 }
 
 int destroy_semaphores(SharedVars *shared)

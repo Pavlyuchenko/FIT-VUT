@@ -1,3 +1,9 @@
+/**
+ * @file semaphors.h
+ * @brief File containing semaphores operations.
+ * @author Michal Pavlíček xpavlim00
+ */
+
 #ifndef SEMAPHORS_H
 #define SEMAPHORS_H
 
@@ -10,7 +16,7 @@
 #include "shared.h"
 #include "cli.h"
 
-int *create_semaphores(SharedVars *shared);
+int create_semaphores(SharedVars *shared);
 int destroy_semaphores(SharedVars *shared);
 int lock_sem(Semaphore *sem);
 int unlock_sem(Semaphore *sem);

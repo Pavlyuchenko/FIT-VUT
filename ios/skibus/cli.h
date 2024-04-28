@@ -1,3 +1,9 @@
+/**
+ * @file cli.h
+ * @brief File containing CLI arguments parsing.
+ * @author Michal Pavlíček xpavlim00
+ */
+
 #ifndef CLI_H
 #define CLI_H
 
