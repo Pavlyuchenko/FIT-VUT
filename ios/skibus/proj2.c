@@ -7,9 +7,22 @@
 
 #include "proj2.h"
 
+SharedVars shared;
+
+void signal_handler(int signum)
+{
+    if (signum == SIGINT || signum == SIGKILL)
+    {
+        destroy_semaphores(&shared);
+        unmap_shared_memory(&shared);
+        fclose(output);
+
+        exit(0);
+    }
+}
+
 int main(int argc, char *argv[])
 {
-    SharedVars shared;
     parse_arguments(argc, argv);
 
     output = fopen(OUTPUT_FILE, "w");
@@ -20,8 +33,14 @@ int main(int argc, char *argv[])
     map_shared_memory(&shared);
     create_semaphores(&shared);
 
+    signal(SIGINT, signal_handler);
+    signal(SIGKILL, signal_handler);
+
     *shared.A = 0;
-    *shared.skiers = 0;
+    *shared.num_skiers_onboard = 0;
+
+    // craete shared->waiting as an array of pointers to int
+    *shared.waiting = 0;
 
     // create skibus process
     pid_t skibus_pid = fork();

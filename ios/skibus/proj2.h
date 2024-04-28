@@ -12,6 +12,7 @@
 #include <sys/ipc.h>
 #include <fcntl.h>
 #include <sys/shm.h>
+#include <signal.h>
 
 #include "cli.h"
 #include "shared.h"
