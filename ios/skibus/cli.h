@@ -13,6 +13,8 @@ typedef struct CLIArguments
     int tb;       // max time of bus ride between stops
 } CLIArguments;
 
-CLIArguments parse_arguments(int argc, char *argv[]);
+void parse_arguments(int argc, char *argv[]);
+
+CLIArguments cli_args;
 
 #endif // CLI_H

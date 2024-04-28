@@ -1,32 +1,54 @@
 #include "semaphors.h"
 
-Semaphore *create_semaphore(int val)
+int *create_semaphores(SharedVars *shared)
 {
-    Semaphore *sem = (Semaphore *)malloc(sizeof(Semaphore));
-    int ret_code = sem_init(sem, 1, val);
+    shared->write_sync = sem_open("/xpavlim00.ios.proj2.write_sync", O_CREAT | O_EXCL, 0666, 1);
+    shared->mutex = sem_open("/xpavlim00.ios.proj2.mutex", O_CREAT | O_EXCL, 0666, 1);
+    shared->bus_capacity = sem_open("/xpavlim00.ios.proj2.bus_capacity", O_CREAT | O_EXCL, 0666, cli_args.capacity);
+    shared->all_aboard = sem_open("/xpavlim00.ios.proj2.all_aboard", O_CREAT | O_EXCL, 0666, 0);
+    shared->let_skiers_leave = sem_open("/xpavlim00.ios.proj2.let_skiers_leave", O_CREAT | O_EXCL, 0666, 0);
 
-    if (ret_code == -1)
+    // Create semaphores for bus stops
+    shared->bus_stops = malloc((cli_args.num_stops + 1) * sizeof(sem_t *));
+    for (int i = 0; i < cli_args.num_stops + 1; i++)
     {
-        perror("sem_init");
-        exit(1);
+        char semaphore_name[50];
+        sprintf(semaphore_name, "/xpavlim00.ios.proj2.bus_stop%d", i);
+        shared->bus_stops[i] = sem_open(semaphore_name, O_CREAT | O_EXCL, 0666, 0);
     }
 
-    return sem;
+    return 0; // success
 }
 
-void destroy_semaphore(Semaphore *sem)
+int destroy_semaphores(SharedVars *shared)
 {
-    int ret_code = sem_destroy(sem);
-    if (ret_code == -1)
+    sem_close(shared->write_sync);
+    sem_close(shared->mutex);
+    sem_close(shared->bus_capacity);
+    sem_close(shared->all_aboard);
+    sem_close(shared->let_skiers_leave);
+
+    sem_unlink("/xpavlim00.ios.proj2.write_sync");
+    sem_unlink("/xpavlim00.ios.proj2.mutex");
+    sem_unlink("/xpavlim00.ios.proj2.bus_capacity");
+    sem_unlink("/xpavlim00.ios.proj2.all_aboard");
+    sem_unlink("/xpavlim00.ios.proj2.let_skiers_leave");
+
+    // Close and unlink bus_stops
+    for (int i = 0; i < cli_args.num_stops + 1; i++)
     {
-        perror("sem_destroy");
-        exit(1);
+        char semaphore_name[50];
+        sprintf(semaphore_name, "/xpavlim00.ios.proj2.bus_stop%d", i);
+        sem_close(shared->bus_stops[i]);
+        sem_unlink(semaphore_name);
     }
 
-    free(sem);
+    free(shared->bus_stops);
+
+    return 0;
 }
 
-void semaphore_wait(Semaphore *sem)
+int lock_sem(Semaphore *sem)
 {
     int ret_code = sem_wait(sem);
 
@@ -35,9 +57,11 @@ void semaphore_wait(Semaphore *sem)
         perror("sem_wait");
         exit(1);
     }
+
+    return 0;
 }
 
-void semaphore_signal(Semaphore *sem)
+int unlock_sem(Semaphore *sem)
 {
     int ret_code = sem_post(sem);
 
@@ -46,4 +70,6 @@ void semaphore_signal(Semaphore *sem)
         perror("sem_post");
         exit(1);
     }
+
+    return 0;
 }
