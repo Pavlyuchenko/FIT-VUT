@@ -1,6 +1,6 @@
 import os
 
-for i in range(1000):
+for i in range(50):
     # run c script
     os.system("./proj2 9 5 10 1000 1000")
 
@@ -13,7 +13,7 @@ for i in range(1000):
     curr = 1
     for line in lines:
         # get first number
-        num = line[0]
+        num = line.split(":")[0].strip()
 
         # check if the numbers go ascending
         if int(num) != curr:

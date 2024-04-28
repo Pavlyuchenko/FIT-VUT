@@ -1,9 +1,30 @@
-1: L 1: started
-2: L 3: started
-3: L 5: started
-4: L 6: started
-5: L 9: started
-7: L 8: started
-6: L 4: started
-8: L 7: started
-9: L 2: started
+1: BUS: started
+2: BUS: arrived to 1
+3: BUS: leaving 1
+4: BUS: arrived to 2
+5: BUS: leaving 2
+6: BUS: arrived to 3
+7: BUS: leaving 3
+8: L 1: started
+9: BUS: arrived to 4
+10: BUS: leaving 4
+11: BUS: arrived to 5
+12: BUS: leaving 5
+13: BUS: arrived to final
+14: L 1: arrived to 2
+15: L 2: started
+16: L 3: started
+17: L 4: started
+18: L 5: started
+19: L 2: arrived to 2
+20: L 6: started
+21: L 7: started
+22: L 6: arrived to 2
+23: L 8: started
+24: L 9: started
+25: L 7: arrived to 1
+26: L 8: arrived to 1
+27: L 9: arrived to 5
+28: L 4: arrived to 4
+29: L 3: arrived to 4
+30: L 5: arrived to 1

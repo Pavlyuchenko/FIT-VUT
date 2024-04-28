@@ -9,24 +9,6 @@
 #include "semaphors.h"
 #include "cli.h"
 
-typedef struct SharedVars
-{
-    // as per The Little Book of Semaphores 7.4.1
-    Semaphore *mutex;
-    Semaphore *multiplex;
-    Semaphore *skibus;
-    Semaphore *all_aboard;
-    Semaphore *write_sync;
-
-    int *A;
-    int *skiers;
-} SharedVars;
-
-FILE *output;
-
-int *log_id;
-int log_id_id;
-
 // print string placeholders
 #define SKIER_STARTED "%d: L %d: started\n"
 #define SKIER_ARRIVED "%d: L %d: arrived to %d\n"
@@ -41,6 +23,6 @@ int log_id_id;
 
 void skibus_process(SharedVars *shared, CLIArguments args);
 
-void skier_process(SharedVars *shared, Semaphore sem, int skier_id, CLIArguments args);
+void skier_process(SharedVars *shared, CLIArguments args, int skier_id);
 
 #endif // ACTORS_H
