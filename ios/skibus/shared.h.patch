@@ -1,0 +1,11 @@
+--- shared.h.odevzdany	2024-05-02 13:18:55.573884537 +0200
++++ shared.h	2024-05-02 13:19:36.937323503 +0200
+@@ -40,7 +40,7 @@
+     FILE *output;
+ } SharedVars;
+ 
+-FILE *output;
++extern FILE *output;
+ 
+ int map_shared_memory(SharedVars *shared);
+ int unmap_shared_memory(SharedVars *shared);

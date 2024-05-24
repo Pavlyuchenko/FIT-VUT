@@ -51,16 +51,16 @@ begin
                 clk_cnt <= "00010"; -- idk why 00010, but otherwise the first bit read happens too late
             end if;
             
-	    if bit_cnt = "1000" and valid_data = '1' then
+	        if bit_cnt = "1000" and valid_data = '1' then
                 DOUT_VLD <= '1';
                 bit_cnt <= "0000";
             end if;
             
-	    if activate_bit_cnt = '1' and clk_cnt >= "01111" then
+	        if activate_bit_cnt = '1' and clk_cnt >= "01111" then
                 clk_cnt <= "00000";
 		
-		DOUT(conv_integer(bit_cnt)) <= DIN;
-		bit_cnt <= bit_cnt + 1;
+		        DOUT(conv_integer(bit_cnt)) <= DIN;
+		        bit_cnt <= bit_cnt + 1;
             end if;
         end if;
     end process;

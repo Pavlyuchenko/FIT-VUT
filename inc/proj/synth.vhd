@@ -36,83 +36,87 @@ architecture rtl of uart_rx_fsm is
   signal n109_o : std_logic;
   signal n113_o : std_logic;
   signal n114_o : std_logic;
-  signal n119_o : std_logic;
-  signal n121_o : std_logic_vector (2 downto 0);
-  signal n123_o : std_logic;
+  signal n120_o : std_logic;
+  signal n121_o : std_logic;
+  signal n123_o : std_logic_vector (2 downto 0);
   signal n125_o : std_logic;
-  signal n127_o : std_logic_vector (2 downto 0);
-  signal n129_o : std_logic;
+  signal n127_o : std_logic;
+  signal n129_o : std_logic_vector (2 downto 0);
   signal n131_o : std_logic;
-  signal n133_o : std_logic_vector (2 downto 0);
-  signal n135_o : std_logic;
-  signal n137_o : std_logic_vector (2 downto 0);
-  signal n139_o : std_logic;
+  signal n133_o : std_logic;
+  signal n135_o : std_logic_vector (2 downto 0);
+  signal n137_o : std_logic;
+  signal n139_o : std_logic_vector (2 downto 0);
   signal n141_o : std_logic;
-  signal n142_o : std_logic_vector (4 downto 0);
+  signal n143_o : std_logic_vector (2 downto 0);
+  signal n144_o : std_logic_vector (2 downto 0);
   signal n145_o : std_logic_vector (2 downto 0);
-  signal n150_q : std_logic_vector (2 downto 0) := "000";
+  signal n146_o : std_logic_vector (2 downto 0);
+  signal n147_o : std_logic_vector (2 downto 0);
+  signal n152_q : std_logic_vector (2 downto 0) := "000";
 begin
   activate_clk_cnt <= n109_o;
   activate_bit_cnt <= n114_o;
   data_valid <= n101_o;
-  -- uart_rx_fsm.vhd:33:8
-  curr_state <= n150_q; -- (isignal)
-  -- uart_rx_fsm.vhd:35:35
+  -- uart_rx_fsm.vhd:32:16
+  curr_state <= n152_q; -- (isignal)
+  -- uart_rx_fsm.vhd:34:51
   n100_o <= '1' when curr_state = "100" else '0';
-  -- uart_rx_fsm.vhd:35:19
+  -- uart_rx_fsm.vhd:34:35
   n101_o <= '0' when n100_o = '0' else '1';
-  -- uart_rx_fsm.vhd:36:41
+  -- uart_rx_fsm.vhd:35:57
   n105_o <= '1' when curr_state = "000" else '0';
-  -- uart_rx_fsm.vhd:36:62
+  -- uart_rx_fsm.vhd:35:78
   n107_o <= '1' when curr_state = "100" else '0';
-  -- uart_rx_fsm.vhd:36:48
+  -- uart_rx_fsm.vhd:35:64
   n108_o <= n105_o or n107_o;
-  -- uart_rx_fsm.vhd:36:25
+  -- uart_rx_fsm.vhd:35:41
   n109_o <= '1' when n108_o = '0' else '0';
-  -- uart_rx_fsm.vhd:37:41
+  -- uart_rx_fsm.vhd:36:57
   n113_o <= '1' when curr_state = "010" else '0';
-  -- uart_rx_fsm.vhd:37:25
+  -- uart_rx_fsm.vhd:36:41
   n114_o <= '0' when n113_o = '0' else '1';
-  -- uart_rx_fsm.vhd:44:40
-  n119_o <= not din;
-  -- uart_rx_fsm.vhd:44:33
-  n121_o <= curr_state when n119_o = '0' else "001";
-  -- uart_rx_fsm.vhd:43:25
-  n123_o <= '1' when curr_state = "000" else '0';
-  -- uart_rx_fsm.vhd:48:44
-  n125_o <= '1' when unsigned (cnt_clk) >= unsigned'("11000") else '0';
-  -- uart_rx_fsm.vhd:48:33
-  n127_o <= curr_state when n125_o = '0' else "010";
-  -- uart_rx_fsm.vhd:47:25
-  n129_o <= '1' when curr_state = "001" else '0';
-  -- uart_rx_fsm.vhd:52:44
-  n131_o <= '1' when unsigned (cnt_bit) >= unsigned'("1000") else '0';
-  -- uart_rx_fsm.vhd:52:33
-  n133_o <= curr_state when n131_o = '0' else "011";
-  -- uart_rx_fsm.vhd:51:25
-  n135_o <= '1' when curr_state = "010" else '0';
-  -- uart_rx_fsm.vhd:56:33
-  n137_o <= curr_state when din = '0' else "100";
-  -- uart_rx_fsm.vhd:55:25
-  n139_o <= '1' when curr_state = "011" else '0';
-  -- uart_rx_fsm.vhd:59:25
+  -- uart_rx_fsm.vhd:41:39
+  n120_o <= '1' when curr_state = "000" else '0';
+  -- uart_rx_fsm.vhd:42:40
+  n121_o <= not din;
+  -- uart_rx_fsm.vhd:42:33
+  n123_o <= curr_state when n121_o = '0' else "001";
+  -- uart_rx_fsm.vhd:45:42
+  n125_o <= '1' when curr_state = "001" else '0';
+  -- uart_rx_fsm.vhd:46:44
+  n127_o <= '1' when unsigned (cnt_clk) >= unsigned'("11000") else '0';
+  -- uart_rx_fsm.vhd:46:33
+  n129_o <= curr_state when n127_o = '0' else "010";
+  -- uart_rx_fsm.vhd:49:42
+  n131_o <= '1' when curr_state = "010" else '0';
+  -- uart_rx_fsm.vhd:50:44
+  n133_o <= '1' when unsigned (cnt_bit) >= unsigned'("1000") else '0';
+  -- uart_rx_fsm.vhd:50:33
+  n135_o <= curr_state when n133_o = '0' else "011";
+  -- uart_rx_fsm.vhd:53:42
+  n137_o <= '1' when curr_state = "011" else '0';
+  -- uart_rx_fsm.vhd:54:33
+  n139_o <= curr_state when din = '0' else "100";
+  -- uart_rx_fsm.vhd:57:42
   n141_o <= '1' when curr_state = "100" else '0';
-  n142_o <= n141_o & n139_o & n135_o & n129_o & n123_o;
-  -- uart_rx_fsm.vhd:42:17
-  with n142_o select n145_o <=
-    "000" when "10000",
-    n137_o when "01000",
-    n133_o when "00100",
-    n127_o when "00010",
-    n121_o when "00001",
-    "XXX" when others;
-  -- uart_rx_fsm.vhd:41:9
+  -- uart_rx_fsm.vhd:57:25
+  n143_o <= curr_state when n141_o = '0' else "000";
+  -- uart_rx_fsm.vhd:53:25
+  n144_o <= n143_o when n137_o = '0' else n139_o;
+  -- uart_rx_fsm.vhd:49:25
+  n145_o <= n144_o when n131_o = '0' else n135_o;
+  -- uart_rx_fsm.vhd:45:25
+  n146_o <= n145_o when n125_o = '0' else n129_o;
+  -- uart_rx_fsm.vhd:41:25
+  n147_o <= n146_o when n120_o = '0' else n123_o;
+  -- uart_rx_fsm.vhd:40:17
   process (clk, rst)
   begin
     if rst = '1' then
-      n150_q <= "000";
+      n152_q <= "000";
     elsif rising_edge (clk) then
-      n150_q <= n145_o;
+      n152_q <= n147_o;
     end if;
   end process;
 end rtl;
@@ -221,25 +225,25 @@ begin
   n16_o <= std_logic_vector (unsigned (clk_cnt) + unsigned'("00001"));
   -- uart_rx.vhd:48:13
   n18_o <= "00010" when activate_clk_cnt = '0' else n16_o;
-  -- uart_rx.vhd:54:24
+  -- uart_rx.vhd:54:28
   n20_o <= '1' when bit_cnt = "1000" else '0';
-  -- uart_rx.vhd:54:33
+  -- uart_rx.vhd:54:37
   n21_o <= n20_o and valid_data;
-  -- uart_rx.vhd:54:13
+  -- uart_rx.vhd:54:17
   n24_o <= '0' when n21_o = '0' else '1';
-  -- uart_rx.vhd:54:13
+  -- uart_rx.vhd:54:17
   n27_o <= bit_cnt when n21_o = '0' else "0000";
-  -- uart_rx.vhd:59:51
+  -- uart_rx.vhd:59:55
   n29_o <= '1' when unsigned (clk_cnt) >= unsigned'("01111") else '0';
-  -- uart_rx.vhd:59:39
+  -- uart_rx.vhd:59:43
   n30_o <= activate_bit_cnt and n29_o;
-  -- uart_rx.vhd:62:22
+  -- uart_rx.vhd:62:30
   n32_o <= bit_cnt (2 downto 0);  --  trunc
-  -- uart_rx.vhd:63:36
+  -- uart_rx.vhd:63:44
   n36_o <= std_logic_vector (unsigned (bit_cnt) + unsigned'("0001"));
-  -- uart_rx.vhd:59:13
+  -- uart_rx.vhd:59:17
   n39_o <= n18_o when n30_o = '0' else "00000";
-  -- uart_rx.vhd:59:13
+  -- uart_rx.vhd:59:17
   n40_o <= n27_o when n30_o = '0' else n36_o;
   -- uart_rx.vhd:46:9
   process (wrap_CLK, wrap_RST)
@@ -279,65 +283,65 @@ begin
       n58_q <= n24_o;
     end if;
   end process;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n59_o <= n32_o (2);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n60_o <= not n59_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n61_o <= n32_o (1);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n62_o <= not n61_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n63_o <= n60_o and n62_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n64_o <= n60_o and n61_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n65_o <= n59_o and n62_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n66_o <= n59_o and n61_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n67_o <= n32_o (0);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n68_o <= not n67_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n69_o <= n63_o and n68_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n70_o <= n63_o and n67_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n71_o <= n64_o and n68_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n72_o <= n64_o and n67_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n73_o <= n65_o and n68_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n74_o <= n65_o and n67_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n75_o <= n66_o and n68_o;
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n76_o <= n66_o and n67_o;
   n77_o <= n57_q (0);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n78_o <= n77_o when n69_o = '0' else wrap_DIN;
   n79_o <= n57_q (1);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n80_o <= n79_o when n70_o = '0' else wrap_DIN;
   n81_o <= n57_q (2);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n82_o <= n81_o when n71_o = '0' else wrap_DIN;
   n83_o <= n57_q (3);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n84_o <= n83_o when n72_o = '0' else wrap_DIN;
   n85_o <= n57_q (4);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n86_o <= n85_o when n73_o = '0' else wrap_DIN;
   n87_o <= n57_q (5);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n88_o <= n87_o when n74_o = '0' else wrap_DIN;
   n89_o <= n57_q (6);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n90_o <= n89_o when n75_o = '0' else wrap_DIN;
   n91_o <= n57_q (7);
-  -- uart_rx.vhd:62:17
+  -- uart_rx.vhd:62:25
   n92_o <= n91_o when n76_o = '0' else wrap_DIN;
   n93_o <= n92_o & n90_o & n88_o & n86_o & n84_o & n82_o & n80_o & n78_o;
 end rtl;

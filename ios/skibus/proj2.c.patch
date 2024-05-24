@@ -1,0 +1,11 @@
+--- proj2.c.odevzdany	2024-05-02 13:18:44.577995649 +0200
++++ proj2.c	2024-05-02 13:20:01.892895510 +0200
+@@ -8,6 +8,8 @@
+ #include "proj2.h"
+ 
+ SharedVars shared;
++FILE *output;
++CLIArguments cli_args;
+ 
+ int main(int argc, char *argv[])
+ {

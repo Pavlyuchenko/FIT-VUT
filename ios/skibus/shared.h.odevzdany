@@ -40,7 +40,7 @@ typedef struct SharedVars
     FILE *output;
 } SharedVars;
 
-extern FILE *output;
+FILE *output;
 
 int map_shared_memory(SharedVars *shared);
 int unmap_shared_memory(SharedVars *shared);

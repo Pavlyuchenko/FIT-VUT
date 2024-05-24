@@ -1,0 +1,11 @@
+--- cli.h.odevzdany	2024-05-02 13:19:12.537679818 +0200
++++ cli.h	2024-05-02 13:19:35.161351654 +0200
+@@ -21,6 +21,6 @@
+ 
+ void parse_arguments(int argc, char *argv[]);
+ 
+-CLIArguments cli_args;
++extern CLIArguments cli_args;
+ 
+ #endif // CLI_H
+\ No newline at end of file

@@ -1,0 +1,47 @@
+Zadani c. 305
+
+Metodou K-means clustering zaradte nasledujci body (x,y,z) v 3D prostoru 
+(-5,-9, 2) (-6, 7,-6) (-9, 9, 1) (-6, 1, 3) (-6,-7, 1) (-4, 1,-6) (-3, 1, 6) (-1, 9,-6) (-2,-5, 4) (-8,-1, 9) 
+do 3 shluku s pocatecnimi stredy 
+(-5,-9, 2) (-3, 1, 6) (-2,-5, 4).
+
+Vysledky vypoctu zaokrouhlujte na dve desetinna mista. 
+
+(používám Euclidian distance)
+
+1. Iterace:
+    Centroids: (-5,-9, 2) (-3, 1, 6) (-2,-5, 4)
+
+    Cluster 1:
+        (-5, -9, 2) (-6, -7, 1)
+    Cluster 2:
+        (-6, 7, -6) (-9, 9, 1) (-6, 1, 3) (-3, 1, 6) (-1, 9, -6) (-8, -1, 9)
+    Cluster 3:
+        (-4, 1, -6) (-2, -5, 4)
+
+
+2. Iterace
+    Centroids: (-5.5, -8.0, 1.5) (-5.5, 4.33, 1.17) (-3.0, -2.0, -1.0)
+
+    Cluster 1:
+        (-5, -9, 2) (-6, -7, 1)
+    Cluster 2:
+        (-6, 7, -6) (-9, 9, 1) (-6, 1, 3) (-3, 1, 6) (-1, 9, -6) (-8, -1, 9)
+    Cluster 3:
+        (-4, 1, -6)
+
+
+3. Iterace = Výsledek
+    Centroids: (-4.33, -7.0, 2.35) (-5.5, 4.33, 1.17) (-4.0, 1.0, -6.0)
+
+    Cluster 1 (-5.25, -5.5, 4.0):
+        (-5, -9, 2) (-6, -7, 1) (-2, -5, 4) (-8, -1, 9)
+
+    Cluster 2 (-6.0, 3.67, 3.34):
+        (-9, 9, 1) (-6, 1, 3) (-3, 1, 6)
+
+    Cluster 3 (-3.67, 5.67, -6.0):
+        (-6, 7, -6) (-4, 1, -6) (-1, 9, -6)
+
+
+V poslední iteraci jsou u Clusteru v závorce uvedeny jejich konečné středy.

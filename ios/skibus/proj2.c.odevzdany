@@ -8,8 +8,6 @@
 #include "proj2.h"
 
 SharedVars shared;
-FILE *output;
-CLIArguments cli_args;
 
 int main(int argc, char *argv[])
 {

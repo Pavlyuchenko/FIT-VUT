@@ -14,11 +14,9 @@ u8_r:- write('Zadej LIN: '),read(LIN),
        u8(LIN,VIN).
 
 % Reseni:
-u8(LIN,VIN) :-
-    recursive_check(LIN, VIN).
+u8([_], _) :- !.
+u8([H1,H2|T], DIFF) :-
+    H1 - H2 =< DIFF,
+    H2 - H1 =< DIFF,
+    u8([H2|T], DIFF).
 
-recursive_check([_], _).                                % Base case - one element ?array? 
-recursive_check([H1, H2|T], VIN) :-                     % Take first and second element
-    (H1 - H2 < 0 -> Diff is H2 - H1 ; Diff is H1 - H2), % Calculate absolute difference, without the abs() function
-    Diff < VIN,                                         % if difference is smaller than VIN, continue, else false
-    recursive_check([H2|T], VIN).

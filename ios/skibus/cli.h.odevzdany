@@ -21,6 +21,6 @@ typedef struct CLIArguments
 
 void parse_arguments(int argc, char *argv[]);
 
-extern CLIArguments cli_args;
+CLIArguments cli_args;
 
 #endif // CLI_H
