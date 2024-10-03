@@ -1,5 +1,5 @@
 isa-top: isa-top.c
-	gcc isa-top.c -o isa-top
+	gcc isa-top.c -o isa-top -lpcap
 
 clean:
-	rm isa-top
+	rm -f isa-top
