@@ -246,6 +246,35 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
 				break;
 		}
 	}
+
+	if (cli_args.interface == NULL)
+    {
+        pcap_if_t *devices = NULL;
+        if (pcap_findalldevs(&devices, errbuff) != PCAP_ERROR)
+        {
+            if (devices != NULL)
+            {
+                pcap_if_t *curr;
+                for (curr = devices; curr; curr = curr->next)
+                {
+                    printf("%s\n", curr->name);
+                }
+            }
+            else
+            {
+                fprintf(stderr, "No devices were found\n");
+            }
+
+            pcap_freealldevs(devices);
+        }
+        else
+        {
+            fprintf(stderr, "Error: %s\n", errbuff);
+        }
+
+        exit(0);
+    }
+
 	printf("%s, %c, %i\n", cli_args.interface, cli_args.sort, cli_args.interval);
 
 	return cli_args;
