@@ -56,8 +56,8 @@ void packet_handler(uint8_t *args, const struct pcap_pkthdr *header,
         // get how long the IP header is
         int IP_HEADER_LENGTH = ip_header->ip_hl * 4;
 
-        src_ip = inet_ntoa(ip_header->ip_src);
-        dst_ip = inet_ntoa(ip_header->ip_dst);
+        src_ip = strdup(inet_ntoa(ip_header->ip_src));
+        dst_ip = strdup(inet_ntoa(ip_header->ip_dst));
 
         packet += IP_HEADER_LENGTH; // skip the IP header
 
@@ -75,15 +75,11 @@ void packet_handler(uint8_t *args, const struct pcap_pkthdr *header,
             dst_port = ntohs(udp_header->dest);
         }
     } else if (ntohs(ethernet_header->ether_type) == ETHERTYPE_ARP) {
-        struct ether_arp *arp_header = (struct ether_arp *)packet;
-
-        printf("src IP: %d.%d.%d.%d\n", arp_header->arp_spa[0],
-               arp_header->arp_spa[1], arp_header->arp_spa[2],
-               arp_header->arp_spa[3]);
-        printf("dst IP: %d.%d.%d.%d\n", arp_header->arp_tpa[0],
-               arp_header->arp_tpa[1], arp_header->arp_tpa[2],
-               arp_header->arp_tpa[3]);
-    } else if (ntohs(ethernet_header->ether_type) == ETHERTYPE_IPV6) {
+		struct ether_arp *arp_header = (struct ether_arp *)packet;
+		printf("src MAC: %s\n", ether_ntoa((struct ether_addr *)arp_header->arp_sha));
+		printf("dst MAC: %s\n", ether_ntoa((struct ether_addr *)arp_header->arp_tha));
+		return;  // skip further processing for ARP packets
+	} else if (ntohs(ethernet_header->ether_type) == ETHERTYPE_IPV6) {
         struct ip6_hdr *ip6_header = (struct ip6_hdr *)packet;
 
         printf("src IP: %s\n", inet_ntop(AF_INET6, &ip6_header->ip6_src,
@@ -290,6 +286,7 @@ int main(int argc, char *argv[]) {
     CLIArguments arguments = parse_arguments(argc, argv);
 
     pthread_t capture_thread, stats_thread;
+	pthread_mutex_init(&mutex, NULL);
 
     if (pthread_create(&capture_thread, NULL, capture_packets,
                        (void *)&arguments) != 0) {
