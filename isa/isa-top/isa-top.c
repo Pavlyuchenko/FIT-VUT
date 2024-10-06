@@ -1,7 +1,7 @@
 /**
  * ISA Project - Application gathering statistics about network traffic
- * Description: isa-top is an application that listens on specified interface and outputs network traffic statistics.
- * Author: Michal Pavlíček xpavlim00
+ * Description: isa-top is an application that listens on specified interface
+ * and outputs network traffic statistics. Author: Michal Pavlíček xpavlim00
  * Note: Some code was taken from my IPK Project 2: A packet sniffer.
  */
 
@@ -191,6 +191,7 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
     // argument parsing done with help from:
     // https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
     while ((opt = getopt(argc, argv, "i:s:t:h")) != -1) {
+        long temp_interval;
         switch (opt) {
         case 'i':
             cli_args.interface = optarg;
@@ -205,7 +206,7 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
             break;
         case 't':
             char *endptr;
-            long temp_interval = strtol(optarg, &endptr, 10);
+            temp_interval = strtol(optarg, &endptr, 10);
 
             if (*endptr != '\0' || temp_interval <= 0) {
                 fprintf(stderr,
@@ -227,7 +228,8 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
                    "interfaces\n\t-i "
                    "interface\t\tlisten on this interfac\n\t-s "
                    "sort\t\tspecifies the sorting of displayed statistics, "
-                   "either by bytes or packets.\n\t-t interval\t\tsets the update interval of statistics\n\nisa-top, copyright "
+                   "either by bytes or packets.\n\t-t interval\t\tsets the "
+                   "update interval of statistics\n\nisa-top, copyright "
                    "Michal Pavlíček <xpavlim00@stud.fit.vutbr.cz, "
                    "michaelg.pavlicek@gmail.com>, 2024.\n");
             exit(0);
@@ -239,7 +241,10 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
                     if (devices != NULL) {
                         pcap_if_t *curr;
                         for (curr = devices; curr; curr = curr->next) {
-                            printf("%s\n", curr->name);
+                            if ((curr->flags & PCAP_IF_UP) &&
+                                (curr->flags & PCAP_IF_RUNNING)) {
+                                printf("%s\n", curr->name);
+                            }
                         }
                     } else {
                         fprintf(stderr, "No devices were found\n");
@@ -252,6 +257,7 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
 
                 exit(0);
             }
+
             if (optopt == 's' || optopt == 't') {
                 fprintf(stderr, "ERROR: Option -%c requires an argument.\n",
                         optopt);
@@ -271,8 +277,6 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
                         "to get list of available interfaces.\n");
         exit(1);
     }
-    printf("%s, %c, %i\n", cli_args.interface, cli_args.sort,
-           cli_args.interval);
 
     return cli_args;
 }
@@ -284,21 +288,22 @@ void quit_app(int signal) {
     exit(0);
 }
 
-int main(int argc, char *argv[]) {
-    CLIArguments arguments = parse_arguments(argc, argv);
-
-    bpf_u_int32 net, mask;
-    if (pcap_lookupnet(arguments.interface, &net, &mask, errbuff) ==
+void *capture_packets(void *arg) {
+	CLIArguments *arguments = (CLIArguments *)arg;
+	
+    printf("Heyo from capture thread!\n");
+	bpf_u_int32 net, mask;
+    if (pcap_lookupnet(arguments->interface, &net, &mask, errbuff) ==
         PCAP_ERROR) {
         fprintf(stderr, "Error: %s\n", errbuff);
-        return 1;
+        exit(1);
     }
 
     packet_capture =
-        pcap_open_live(arguments.interface, 65535, 1, 1000, errbuff);
+        pcap_open_live(arguments->interface, 65535, 1, 1000, errbuff);
     if (packet_capture == NULL) {
         fprintf(stderr, "Error: %s\n", errbuff);
-        return 1;
+        exit(1);
     }
 
     // this handles Ctrl+C and other signals, such that we can close the pcap
@@ -316,22 +321,61 @@ int main(int argc, char *argv[]) {
 
     // filter creation (for user provided arguments)
     struct bpf_program fp;
-
-    if (pcap_compile(packet_capture, &fp, NULL, 0, net) == PCAP_ERROR) {
+	char filter[] = "ip or ip6"; // based on discussion, only need to listen for IPv4 and IPv6
+    if (pcap_compile(packet_capture, &fp, filter, 0, net) == PCAP_ERROR) {
         fprintf(stderr, "Error: %s with %s\n", pcap_geterr(packet_capture),
                 "filter");
-        return 1;
+        exit(1);
     }
     if (pcap_setfilter(packet_capture, &fp) == PCAP_ERROR) {
         fprintf(stderr, "Error: %s\n", pcap_geterr(packet_capture));
-        return 1;
+        exit(1);
     }
 
     // listen for n packets
     // TODO: Fix magic nubmer
-    pcap_loop(packet_capture, 100, packet_handler, NULL);
+    pcap_loop(packet_capture, -1, packet_handler, NULL);
 
     pcap_close(packet_capture);
 
+    return NULL;
+}
+
+void *display_stats() {
+    printf("Stats called for duty!\n");
+
+	while (1) {
+		sleep(1);
+
+		printf("Printing statistics...\n");
+	}
+
+    return NULL;
+}
+
+int main(int argc, char *argv[]) {
+    CLIArguments arguments = parse_arguments(argc, argv);
+
+    pthread_t capture_thread, stats_thread;
+
+    if (pthread_create(&capture_thread, NULL, capture_packets, (void *) &arguments) != 0) {
+        fprintf(stderr, "ERROR: error while running pthread_create./n");
+        exit(1);
+    }
+    if (pthread_create(&stats_thread, NULL, display_stats, NULL) != 0) {
+        fprintf(stderr, "ERROR: error while running pthread_create./n");
+        exit(1);
+    }
+
+    if (pthread_join(capture_thread, NULL) != 0) {
+		fprintf(stderr, "ERROR: error while running pthread_join./n");
+        exit(1);
+	}
+    if (pthread_join(stats_thread, NULL) != 0) {
+		fprintf(stderr, "ERROR: error while running pthread_join./n");
+        exit(1);
+	}
+
+    
     return 0;
 }

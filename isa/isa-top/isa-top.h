@@ -35,6 +35,9 @@
 #include <netinet/udp.h>
 #include <netinet/icmp6.h>
 
+// pthread headers
+#include <pthread.h>
+
 /**
  *  running the script
  * ./ipk-sniffer
