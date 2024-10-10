@@ -40,7 +40,6 @@ Node *get_node(CommunicationInfo *c_info) {
 
     while (curr_node != NULL) {
         bool same = compare_communications(c_info, curr_node->data);
-        printf("same: %d\n", same);
 
         if (same) {
             return curr_node;

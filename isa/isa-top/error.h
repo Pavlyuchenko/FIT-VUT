@@ -12,6 +12,8 @@ void quit_app(int signal);
 
 typedef enum {
     ERR_MALLOC = 1,
+	ERR_THREAD,
+	ERR_CLI,
 } ErrorType;
 
 void throw_error(const char *message, ErrorType err_type);

@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "error.h"
 
 CLIArguments parse_arguments(int argc, char *argv[]) {
     /*  ./ipk-sniffer
@@ -25,8 +26,7 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
             cli_args.sort = optarg[0];
 
             if (!(cli_args.sort == 'b' || cli_args.sort == 'p')) {
-                fprintf(stderr,
-                        "ERROR: Only valid options for -s are b or p.\n");
+				throw_error(" for -s you have to use b or p", ERR_CLI);
             }
             break;
         case 't':
@@ -34,11 +34,7 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
             temp_interval = strtol(optarg, &endptr, 10);
 
             if (*endptr != '\0' || temp_interval <= 0) {
-                fprintf(stderr,
-                        "ERROR: Invalid interval '%s'. Must be a positive "
-                        "integer.\n",
-                        optarg);
-                exit(1);
+				throw_error("-t must get positive integer", ERR_CLI);
             }
             cli_args.interval = (int)temp_interval;
             break;
@@ -84,23 +80,17 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
             }
 
             if (optopt == 's' || optopt == 't') {
-                fprintf(stderr, "ERROR: Option -%c requires an argument.\n",
-                        optopt);
-                exit(1);
+				throw_error("options require an argument", ERR_CLI);
             } else if (isprint(optopt)) {
-                fprintf(stderr, "ERROR: Unknown option -%c.\n", optopt);
-                exit(1);
+				throw_error("unknown option", ERR_CLI);
             } else {
-                fprintf(stderr, "ERROR: Unknown character.\n");
-                exit(1);
+				throw_error("unknown character", ERR_CLI);
             }
             break;
         }
     }
     if (!cli_args.interface && optopt != 't') {
-        fprintf(stderr, "ERROR: No interface was specified.\nRun ./isa-top -i "
-                        "to get list of available interfaces.\n");
-        exit(1);
+		throw_error("no interface was specified. Try -h", ERR_CLI);
     }
 
     return cli_args;

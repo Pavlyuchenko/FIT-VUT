@@ -19,6 +19,12 @@ void throw_error(const char *message, ErrorType err_type) {
     case ERR_MALLOC:
         fprintf(stderr, "ERROR: Malloc failed in %s.\n", message);
         break;
+	case ERR_THREAD:
+		fprintf(stderr, "ERROR: Threading failed in %s.\n", message);
+		break;
+	case ERR_CLI:
+		fprintf(stderr, "ERROR: There has been an error with CLI %s.\n", message);
+		break;
     }
 
 	close_all();
