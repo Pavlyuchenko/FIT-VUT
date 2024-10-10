@@ -1,0 +1,108 @@
+#include "cli.h"
+
+CLIArguments parse_arguments(int argc, char *argv[]) {
+    /*  ./ipk-sniffer
+     *      [-i interface]
+     *      {-s sort by}
+     *      {-t interval for stat update}
+     *      {-h show this help}
+     */
+    CLIArguments cli_args;
+    int opt;
+    cli_args.interface = NULL; // which interface is listened on
+    cli_args.sort = 'b';       // either b or p meaning bytes/packets per second
+    cli_args.interval = 1;     // how often stats are updated
+
+    // argument parsing done with help from:
+    // https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
+    while ((opt = getopt(argc, argv, "i:s:t:h")) != -1) {
+        long temp_interval;
+        switch (opt) {
+        case 'i':
+            cli_args.interface = optarg;
+            break;
+        case 's':
+            cli_args.sort = optarg[0];
+
+            if (!(cli_args.sort == 'b' || cli_args.sort == 'p')) {
+                fprintf(stderr,
+                        "ERROR: Only valid options for -s are b or p.\n");
+            }
+            break;
+        case 't':
+            char *endptr;
+            temp_interval = strtol(optarg, &endptr, 10);
+
+            if (*endptr != '\0' || temp_interval <= 0) {
+                fprintf(stderr,
+                        "ERROR: Invalid interval '%s'. Must be a positive "
+                        "integer.\n",
+                        optarg);
+                exit(1);
+            }
+            cli_args.interval = (int)temp_interval;
+            break;
+        case 'h':
+            printf("isa-top: displays network traffic on an interface by host. "
+                   "Created for course ISA @ FIT VUT."
+                   "\n\nSynopsis: "
+                   "./ipk-sniffer\n\t[-i interface]\n\t{-s sort by b|p}\n\t{-t "
+                   "update interval}\n\t{-h show this help}\n\n"
+                   "\t-h\t\tdisplays this message\n\t-i\t\tdisplays list of "
+                   "available "
+                   "interfaces\n\t-i "
+                   "interface\t\tlisten on this interfac\n\t-s "
+                   "sort\t\tspecifies the sorting of displayed statistics, "
+                   "either by bytes or packets.\n\t-t interval\t\tsets the "
+                   "update interval of statistics\n\nisa-top, copyright "
+                   "Michal Pavlíček <xpavlim00@stud.fit.vutbr.cz, "
+                   "michaelg.pavlicek@gmail.com>, 2024.\n");
+            exit(0);
+            break;
+        case '?':
+            if (optopt == 'i') {
+                pcap_if_t *devices = NULL;
+                if (pcap_findalldevs(&devices, errbuff) != PCAP_ERROR) {
+                    if (devices != NULL) {
+                        pcap_if_t *curr;
+                        for (curr = devices; curr; curr = curr->next) {
+                            if ((curr->flags & PCAP_IF_UP) &&
+                                (curr->flags & PCAP_IF_RUNNING)) {
+                                printf("%s\n", curr->name);
+                            }
+                        }
+                    } else {
+                        fprintf(stderr, "No devices were found\n");
+                    }
+
+                    pcap_freealldevs(devices);
+                } else {
+                    fprintf(stderr, "Error: %s\n", errbuff);
+                }
+
+                exit(0);
+            }
+
+            if (optopt == 's' || optopt == 't') {
+                fprintf(stderr, "ERROR: Option -%c requires an argument.\n",
+                        optopt);
+                exit(1);
+            } else if (isprint(optopt)) {
+                fprintf(stderr, "ERROR: Unknown option -%c.\n", optopt);
+                exit(1);
+            } else {
+                fprintf(stderr, "ERROR: Unknown character.\n");
+                exit(1);
+            }
+            break;
+        }
+    }
+    if (!cli_args.interface && optopt != 't') {
+        fprintf(stderr, "ERROR: No interface was specified.\nRun ./isa-top -i "
+                        "to get list of available interfaces.\n");
+        exit(1);
+    }
+
+    return cli_args;
+}
+
