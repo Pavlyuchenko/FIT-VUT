@@ -44,21 +44,35 @@ void packet_handler(uint8_t *args, const struct pcap_pkthdr *header,
             src_port = ntohs(udp_header->source);
             dst_port = ntohs(udp_header->dest);
         }
-    } else if (ntohs(ethernet_header->ether_type) == ETHERTYPE_ARP) {
-        struct ether_arp *arp_header = (struct ether_arp *)packet;
-        printf("src MAC: %s\n",
-               ether_ntoa((struct ether_addr *)arp_header->arp_sha));
-        printf("dst MAC: %s\n",
-               ether_ntoa((struct ether_addr *)arp_header->arp_tha));
-        return; // skip further processing for ARP packets
     } else if (ntohs(ethernet_header->ether_type) == ETHERTYPE_IPV6) {
         struct ip6_hdr *ip6_header = (struct ip6_hdr *)packet;
-
-        // printf("src IP: %s\n", inet_ntop(AF_INET6, &ip6_header->ip6_src, errbuff, INET6_ADDRSTRLEN));
-        // printf("dst IP: %s\n", inet_ntop(AF_INET6, &ip6_header->ip6_dst, errbuff, INET6_ADDRSTRLEN));
+        
+        // Convert IPv6 addresses to string representation
+        inet_ntop(AF_INET6, &ip6_header->ip6_src, src_ip, sizeof(src_ip));
+        inet_ntop(AF_INET6, &ip6_header->ip6_dst, dst_ip, sizeof(dst_ip));
 
         packet += sizeof(struct ip6_hdr); // skip the IPv6 header
 
+        // Check the next header type
+        uint8_t next_header = ip6_header->ip6_nxt;
+        
+        if (next_header == IPPROTO_TCP) {
+            strcpy(protocol, "tcp");
+            struct tcphdr *tcp_header = (struct tcphdr *)packet;
+
+            src_port = ntohs(tcp_header->source);
+            dst_port = ntohs(tcp_header->dest);
+        } else if (next_header == IPPROTO_UDP) {
+            strcpy(protocol, "udp");
+            struct udphdr *udp_header = (struct udphdr *)packet;
+
+            src_port = ntohs(udp_header->source);
+            dst_port = ntohs(udp_header->dest);
+        } else {
+            // Handle other IPv6 extension headers if needed
+            fprintf(stderr, "Unsupported IPv6 next header type: %d\n", next_header);
+            return;
+        }
     } else {
         fprintf(stderr, "Unsupported protocol %d\n",
                 ethernet_header->ether_type);

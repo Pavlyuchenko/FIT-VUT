@@ -1,9 +1,12 @@
 #include "error.h"
+#include "global.h"
 
 char errbuff[PCAP_ERRBUF_SIZE];
 
 void close_all() {
-    pcap_close(app_context.packet_capture);
+	if (app_context.packet_capture) {
+		pcap_close(app_context.packet_capture);
+	}
     return;
 }
 

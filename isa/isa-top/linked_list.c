@@ -118,26 +118,57 @@ void update_node_position(Node *node, bool order) {
     return;
 }
 
+double KB = 1024.0;
+double MB = 1048576.0;
+double GB = 1073741824.0;
+char *bytes_conversion(long int bytes) {
+    int max = 100;
+    char *buf = malloc(max);
+    if (buf == NULL) {
+        return NULL;
+    }
+
+    if (bytes > GB) {
+        snprintf(buf, max, "%.2f GB/s\n", bytes / GB);
+    } else if (bytes > MB) {
+        snprintf(buf, max, "%.2f MB/s\n", bytes / MB);
+    } else if (bytes > KB) {
+        snprintf(buf, max, "%.2f KB/s\n", bytes / KB);
+    } else {
+        snprintf(buf, max, "%ld B/s\n", bytes);
+    }
+
+    return buf;
+}
+
 void print_node_data(Node *node) {
     if (node && node->data) {
-        printf("%s:%d -> %s:%d, total: %ld\n", node->data->src_ip,
+        printf("%s:%d -> %s:%d, total: %s\n", node->data->src_ip,
                node->data->src_port, node->data->dst_ip, node->data->dst_port,
-               node->data->Rx + node->data->Tx);
+               bytes_conversion(node->data->Rx + node->data->Tx));
     } else {
         printf("Node or node data is NULL\n");
     }
 }
 
 void print_llist(int count) {
-    printf("Printing...\n");
+    printf("\n-----------------------------------\n");
     Node *curr_node = llist->head;
+    long int total_packets = 0;
+    long int total_transmission_speed = 0;
 
     while (curr_node != NULL && count > 0) {
         print_node_data(curr_node);
 
+        total_packets += curr_node->data->packets_sent;
+        total_transmission_speed += curr_node->data->Rx + curr_node->data->Tx;
+
         count--;
         curr_node = curr_node->next;
     }
+
+    printf("Total packets: %ld, Total transmission speed: %s.\n", total_packets,
+           bytes_conversion(total_transmission_speed));
 }
 
 Node *init_node() {

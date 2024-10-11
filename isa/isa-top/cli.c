@@ -26,7 +26,7 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
             cli_args.sort = optarg[0];
 
             if (!(cli_args.sort == 'b' || cli_args.sort == 'p')) {
-				throw_error(" for -s you have to use b or p", ERR_CLI);
+                throw_error(" for -s you have to use b or p", ERR_CLI);
             }
             break;
         case 't':
@@ -34,7 +34,7 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
             temp_interval = strtol(optarg, &endptr, 10);
 
             if (*endptr != '\0' || temp_interval <= 0) {
-				throw_error("-t must get positive integer", ERR_CLI);
+                throw_error("-t must get positive integer", ERR_CLI);
             }
             cli_args.interval = (int)temp_interval;
             break;
@@ -80,19 +80,18 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
             }
 
             if (optopt == 's' || optopt == 't') {
-				throw_error("options require an argument", ERR_CLI);
+                throw_error("options require an argument", ERR_CLI);
             } else if (isprint(optopt)) {
-				throw_error("unknown option", ERR_CLI);
+                throw_error("unknown option", ERR_CLI);
             } else {
-				throw_error("unknown character", ERR_CLI);
+                throw_error("unknown character", ERR_CLI);
             }
             break;
         }
     }
-    if (!cli_args.interface && optopt != 't') {
-		throw_error("no interface was specified. Try -h", ERR_CLI);
+    if (!cli_args.interface) {
+        throw_error("no interface was specified. Try -h", ERR_CLI);
     }
 
     return cli_args;
 }
-

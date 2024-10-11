@@ -35,8 +35,6 @@ void insert_communication(CommunicationInfo *c_info) {
 	add_communications(node->data, c_info);
 
 	update_node_position(node, true);
-
-	print_llist(10);
 }
 
 CommunicationInfo *add_communications(CommunicationInfo *first,
@@ -64,11 +62,7 @@ void *display_stats() {
         sleep(1);
 
         pthread_mutex_lock(&app_context.mutex);
-        printf("Packets sent: %d\nBites sent: %d\n\n", packet_count,
-               bites_sent);
-        packet_count = 0;
-        bites_sent = 0;
-		// print_llist(100);
+		print_llist(10);
         pthread_mutex_unlock(&app_context.mutex);
     }
 
