@@ -1,8 +1,13 @@
 #include "linked_list.h"
+#include "global.h"
 
 LinkedList *llist;
 
 void init_llist() {
+    if (llist != NULL) {
+        free(llist);
+    }
+
     llist = malloc(sizeof(LinkedList));
     if (llist == NULL) {
         throw_error("LinkedList", ERR_MALLOC);
@@ -35,7 +40,7 @@ Node *get_node(CommunicationInfo *c_info) {
         curr_node = init_node();
         llist->head = curr_node;
         curr_node->data = c_info;
-        curr_node->data->packets_sent = 1;
+        curr_node->data->packets_sent_Rx = 1;
     }
 
     while (curr_node != NULL) {
@@ -61,27 +66,26 @@ Node *get_node(CommunicationInfo *c_info) {
 // or packets_sent, based on congig
 // @order => 0 is transmission speed
 //			 1 is packets sent
-long int get_nodes_order(Node *node, bool order) {
-    if (order) {
+long int get_nodes_order(Node *node) {
+    if (app_context.cli_args.sort == 'b') {
         return node->data->Rx + node->data->Tx;
     }
 
-    return node->data->packets_sent;
+    return node->data->packets_sent_Rx + node->data->packets_sent_Tx;
 }
 
 // Assumes nodes data have changed, therefore
 // looks at prev nodes until it finds its
 // corresponding new place in the sorted llist
-void update_node_position(Node *node, bool order) {
+void update_node_position(Node *node) {
     if (node == NULL || node->prev == NULL) {
         return;
     }
 
-    long int node_order = get_nodes_order(node, order);
+    long int node_order = get_nodes_order(node);
     Node *prev_node = node->prev;
 
-    while (prev_node != NULL &&
-           get_nodes_order(prev_node, order) < node_order) {
+    while (prev_node != NULL && get_nodes_order(prev_node) < node_order) {
         prev_node = prev_node->prev;
     }
 
@@ -118,29 +122,28 @@ void update_node_position(Node *node, bool order) {
     return;
 }
 
-double KB = 1024.0;
-double MB = 1048576.0;
-double GB = 1073741824.0;
 char *bytes_conversion(long int bytes) {
-    int max = 100;
-    char *buf = malloc(max);
-    if (buf == NULL) {
-        return NULL;
-    }
+    static char buf[100];
+    double bits = bytes * 8;
+    double Kb = 1024.0;
+    double Mb = 1024.0 * Kb;
+    double Gb = 1024.0 * Mb;
 
-    if (bytes > GB) {
-        snprintf(buf, max, "%.2f GB/s\n", bytes / GB);
-    } else if (bytes > MB) {
-        snprintf(buf, max, "%.2f MB/s\n", bytes / MB);
-    } else if (bytes > KB) {
-        snprintf(buf, max, "%.2f KB/s\n", bytes / KB);
+    if (bits >= Gb) {
+        snprintf(buf, sizeof(buf), "%.1f G",
+                 bits / Gb / app_context.cli_args.interval);
+    } else if (bits >= Mb) {
+        snprintf(buf, sizeof(buf), "%.1f M",
+                 bits / Mb / app_context.cli_args.interval);
+    } else if (bits >= Kb) {
+        snprintf(buf, sizeof(buf), "%.1f K",
+                 bits / Kb / app_context.cli_args.interval);
     } else {
-        snprintf(buf, max, "%ld B/s\n", bytes);
+        snprintf(buf, sizeof(buf), "%.1f", bits);
     }
 
     return buf;
 }
-
 void print_node_data(Node *node) {
     if (node && node->data) {
         printf("%s:%d -> %s:%d, total: %s\n", node->data->src_ip,
@@ -151,24 +154,93 @@ void print_node_data(Node *node) {
     }
 }
 
+void format_ip_port(char *buffer, size_t bufsize, const char *ip,
+                    uint16_t port) {
+    size_t ip_len = strlen(ip);
+    if (ip_len + 7 > bufsize) {
+        snprintf(buffer, bufsize, "%.*s:%.5u", (int)(bufsize - 7), ip, port);
+    } else {
+        snprintf(buffer, bufsize, "%s:%u", ip, port);
+    }
+}
+
 void print_llist(int count) {
-    printf("\n-----------------------------------\n");
+    clear();
+
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+
+    // box around screen
+    box(stdscr, 0, 0);
+
+    // app title
+    attron(A_BOLD | COLOR_PAIR(1));
+    mvprintw(1, (max_x - 16) / 2, "isa-top : xpavlim00");
+
+    // header
+    mvprintw(3, 2, "Source IP:Port");
+    mvprintw(3, 26, "Dest IP:Port");
+    mvprintw(3, 50, "Proto");
+    mvprintw(3, 57, "Rx b/s");
+    mvprintw(3, 66, "Tx b/s");
+    mvprintw(3, 75, "Rx p/s");
+    mvprintw(3, 84, "Tx p/s");
+
+    // horizontal line under the header
+    mvhline(4, 1, ACS_HLINE, max_x - 2);
+
     Node *curr_node = llist->head;
-    long int total_packets = 0;
-    long int total_transmission_speed = 0;
+    int row = 5;
+    long int total_packets_rx = 0;
+    long int total_packets_tx = 0;
+    long int total_rx = 0;
+    long int total_tx = 0;
 
-    while (curr_node != NULL && count > 0) {
-        print_node_data(curr_node);
+    while (curr_node != NULL && count > 0 && row < max_y - 4) {
+        if (curr_node->data) {
+            char src[24], dst[24];
+            format_ip_port(src, sizeof(src), curr_node->data->src_ip,
+                           curr_node->data->src_port);
+            format_ip_port(dst, sizeof(dst), curr_node->data->dst_ip,
+                           curr_node->data->dst_port);
 
-        total_packets += curr_node->data->packets_sent;
-        total_transmission_speed += curr_node->data->Rx + curr_node->data->Tx;
+            mvprintw(row, 2, "%-23.23s", src);
+            mvprintw(row, 26, "%-23.23s", dst);
+            mvprintw(row, 50, "%-6.6s", curr_node->data->protocol);
+            mvprintw(row, 57, "%-8s", bytes_conversion(curr_node->data->Rx));
+            mvprintw(row, 66, "%-8s", bytes_conversion(curr_node->data->Tx));
+            mvprintw(row, 75, "%-8ld",
+                     curr_node->data->packets_sent_Rx /
+                         app_context.cli_args.interval);
+            mvprintw(row, 84, "%-8ld",
+                     curr_node->data->packets_sent_Tx /
+                         app_context.cli_args.interval);
 
-        count--;
+            total_packets_rx += curr_node->data->packets_sent_Rx;
+            total_packets_tx += curr_node->data->packets_sent_Tx;
+            total_rx += curr_node->data->Rx;
+            total_tx += curr_node->data->Tx;
+
+            row++;
+            count--;
+        }
         curr_node = curr_node->next;
     }
 
-    printf("Total packets: %ld, Total transmission speed: %s.\n", total_packets,
-           bytes_conversion(total_transmission_speed));
+    // Draw a horizontal line above the totals
+    mvhline(max_y - 3, 1, ACS_HLINE, max_x - 2);
+
+    // Print totals
+    mvprintw(max_y - 2, 2, "Total Rx: %s (%ld p)", bytes_conversion(total_rx),
+             total_packets_rx / app_context.cli_args.interval);
+    mvprintw(max_y - 1, 2, "Total Tx: %s (%ld p)", bytes_conversion(total_tx),
+             total_packets_tx / app_context.cli_args.interval);
+
+    // Print instructions
+    mvprintw(max_y - 1, max_x - 20, "Press 'q' to quit");
+    attroff(COLOR_PAIR(1));
+
+    refresh();
 }
 
 Node *init_node() {

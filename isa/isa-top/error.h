@@ -14,6 +14,7 @@ typedef enum {
     ERR_MALLOC = 1,
 	ERR_THREAD,
 	ERR_CLI,
+	ERR_PACKET_CAPTURE,
 } ErrorType;
 
 void throw_error(const char *message, ErrorType err_type);

@@ -7,9 +7,19 @@
 // pthread headers
 #include <pthread.h>
 
+typedef struct CLIArguments
+{
+    char *interface;
+	char sort;
+	int interval;
+	int cumulative;
+} CLIArguments;
+
+
 typedef struct AppContext {
 	pcap_t *packet_capture;
-	pthread_mutex_t mutex; // PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_t mutex;
+	CLIArguments cli_args;
 } AppContext;
 
 extern AppContext app_context;

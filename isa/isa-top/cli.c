@@ -13,10 +13,11 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
     cli_args.interface = NULL; // which interface is listened on
     cli_args.sort = 'b';       // either b or p meaning bytes/packets per second
     cli_args.interval = 1;     // how often stats are updated
+	cli_args.cumulative = 0;
 
     // argument parsing done with help from:
     // https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
-    while ((opt = getopt(argc, argv, "i:s:t:h")) != -1) {
+    while ((opt = getopt(argc, argv, "hi:s:t:c")) != -1) {
         long temp_interval;
         switch (opt) {
         case 'i':
@@ -26,7 +27,7 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
             cli_args.sort = optarg[0];
 
             if (!(cli_args.sort == 'b' || cli_args.sort == 'p')) {
-                throw_error(" for -s you have to use b or p", ERR_CLI);
+				throw_error(" for -s you have to use b or p", ERR_CLI);
             }
             break;
         case 't':
@@ -34,23 +35,26 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
             temp_interval = strtol(optarg, &endptr, 10);
 
             if (*endptr != '\0' || temp_interval <= 0) {
-                throw_error("-t must get positive integer", ERR_CLI);
+				throw_error("-t must get positive integer", ERR_CLI);
             }
             cli_args.interval = (int)temp_interval;
             break;
+		case 'c':
+			cli_args.cumulative = 1;
+			break;
         case 'h':
             printf("isa-top: displays network traffic on an interface by host. "
                    "Created for course ISA @ FIT VUT."
                    "\n\nSynopsis: "
                    "./ipk-sniffer\n\t[-i interface]\n\t{-s sort by b|p}\n\t{-t "
-                   "update interval}\n\t{-h show this help}\n\n"
+                   "update interval}\n\t{-h show this help}\n\t{-c cumulative stats}\n\n"
                    "\t-h\t\tdisplays this message\n\t-i\t\tdisplays list of "
                    "available "
                    "interfaces\n\t-i "
                    "interface\t\tlisten on this interfac\n\t-s "
-                   "sort\t\tspecifies the sorting of displayed statistics, "
+                   "b|p\t\tspecifies the sorting of displayed statistics, "
                    "either by bytes or packets.\n\t-t interval\t\tsets the "
-                   "update interval of statistics\n\nisa-top, copyright "
+                   "update interval of statistics\n\t-c\t\tshow cumulative stats over whole duration of program\n\nisa-top, copyright "
                    "Michal Pavlíček <xpavlim00@stud.fit.vutbr.cz, "
                    "michaelg.pavlicek@gmail.com>, 2024.\n");
             exit(0);
@@ -80,18 +84,19 @@ CLIArguments parse_arguments(int argc, char *argv[]) {
             }
 
             if (optopt == 's' || optopt == 't') {
-                throw_error("options require an argument", ERR_CLI);
+				throw_error("options require an argument", ERR_CLI);
             } else if (isprint(optopt)) {
-                throw_error("unknown option", ERR_CLI);
+				throw_error("unknown option", ERR_CLI);
             } else {
-                throw_error("unknown character", ERR_CLI);
+				throw_error("unknown character", ERR_CLI);
             }
             break;
         }
     }
     if (!cli_args.interface) {
-        throw_error("no interface was specified. Try -h", ERR_CLI);
+		throw_error("no interface was specified. Try -h", ERR_CLI);
     }
 
     return cli_args;
 }
+

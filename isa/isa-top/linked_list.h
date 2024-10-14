@@ -15,6 +15,10 @@
 #define MAX_IP_LEN  40
 #define MAX_PROTO_LEN  100
 
+// ncurses
+#define MAX_DISPLAY_ROWS 10
+#define MAX_IP_DISPLAY_LEN 46
+
 // struct for holding information about a communication between two ip addresses
 typedef struct CommunicationInfo {
     // info about hosts
@@ -27,7 +31,8 @@ typedef struct CommunicationInfo {
     // info about their communication (statistics)
     long int Rx;           // received data in bytes
     long int Tx;           // transmitted data in bytes
-    long int packets_sent; // packets sent between these two IPs
+    long int packets_sent_Rx; // packets sent between these two IPs
+    long int packets_sent_Tx; // packets sent between these two IPs
 } CommunicationInfo;
 
 typedef struct Node {
@@ -46,7 +51,7 @@ void init_llist();
 
 Node *get_node(CommunicationInfo *c_info);
 
-void update_node_position(Node *node, bool order);
+void update_node_position(Node *node);
 Node *init_node();
 
 void print_llist(int count);

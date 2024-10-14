@@ -1,4 +1,5 @@
 #include "packet_handler.h"
+#include "error.h"
 #include "stats.h"
 #include <netinet/in.h>
 #include <netinet/ip_icmp.h>
@@ -80,7 +81,7 @@ void packet_handler(uint8_t *args, const struct pcap_pkthdr *header,
 
             src_port = ntohs(udp_header->source);
             dst_port = ntohs(udp_header->dest);
-        }  else if (next_header == IPPROTO_ICMPV6) {
+        } else if (next_header == IPPROTO_ICMPV6) {
             strcpy(protocol, "icmpv6");
         } else {
             struct protoent *proto;
@@ -90,8 +91,7 @@ void packet_handler(uint8_t *args, const struct pcap_pkthdr *header,
                 strncpy(protocol, proto->p_name, MAX_PROTO_LEN - 1);
                 protocol[MAX_PROTO_LEN - 1] = '\0';
             } else {
-                snprintf(protocol, MAX_PROTO_LEN, "Unknown (%d)",
-                         next_header);
+                snprintf(protocol, MAX_PROTO_LEN, "Unknown (%d)", next_header);
             }
         }
 
@@ -114,7 +114,7 @@ void packet_handler(uint8_t *args, const struct pcap_pkthdr *header,
 
     ci->Rx = packet_len_bytes;
     ci->Tx = 0;
-    ci->packets_sent = 1;
+    ci->packets_sent_Tx = 1;
     insert_communication(ci);
     pthread_mutex_unlock(&app_context.mutex);
 }
@@ -125,15 +125,13 @@ void *capture_packets(void *arg) {
     bpf_u_int32 net, mask;
     if (pcap_lookupnet(arguments->interface, &net, &mask, errbuff) ==
         PCAP_ERROR) {
-        fprintf(stderr, "Error: %s\n", errbuff);
-        exit(1);
+        throw_error("interface does not exist", ERR_PACKET_CAPTURE);
     }
 
     app_context.packet_capture =
         pcap_open_live(arguments->interface, 65535, 1, 1000, errbuff);
     if (app_context.packet_capture == NULL) {
-        fprintf(stderr, "Error: %s\n", errbuff);
-        exit(1);
+        throw_error("openning packet capture failed", ERR_PACKET_CAPTURE);
     }
 
     // this handles Ctrl+C and other signals, such that we can close the pcap
@@ -144,9 +142,8 @@ void *capture_packets(void *arg) {
 
     // make sure the device provides Ethernet headers
     if (pcap_datalink(app_context.packet_capture) != DLT_EN10MB) {
-        fprintf(stderr, "The chosen device does not provide Ethernet headers. "
-                        "Choose a different one.\n");
-        exit(1);
+        throw_error("interface does not provide ethernet headers",
+                    ERR_PACKET_CAPTURE);
     }
 
     // filter creation (for user provided arguments)
@@ -155,13 +152,11 @@ void *capture_packets(void *arg) {
                                  // IPv4 and IPv6
     if (pcap_compile(app_context.packet_capture, &fp, filter, 0, net) ==
         PCAP_ERROR) {
-        fprintf(stderr, "Error: %s with %s\n",
-                pcap_geterr(app_context.packet_capture), "filter");
-        exit(1);
+
+        throw_error("entered filter is wrong", ERR_PACKET_CAPTURE);
     }
     if (pcap_setfilter(app_context.packet_capture, &fp) == PCAP_ERROR) {
-        fprintf(stderr, "Error: %s\n", pcap_geterr(app_context.packet_capture));
-        exit(1);
+        throw_error("setting filter failed", ERR_PACKET_CAPTURE);
     }
 
     // listen for packets indefinitely

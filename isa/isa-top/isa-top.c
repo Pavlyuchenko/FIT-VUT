@@ -13,7 +13,7 @@
 AppContext app_context = {0};
 
 int main(int argc, char *argv[]) {
-    CLIArguments arguments = parse_arguments(argc, argv);
+	app_context.cli_args =  parse_arguments(argc, argv);
 
     init_llist();
 
@@ -21,11 +21,11 @@ int main(int argc, char *argv[]) {
     pthread_mutex_init(&app_context.mutex, NULL);
 
     if (pthread_create(&capture_thread, NULL, capture_packets,
-                       (void *)&arguments) != 0) {
+                       (void *)&app_context.cli_args) != 0) {
 		throw_error("pthread_create", ERR_THREAD);
     }
     if (pthread_create(&stats_thread, NULL, display_stats,
-                       (void *)&arguments) != 0) {
+                       (void *)&app_context.cli_args) != 0) {
 		throw_error("pthread_create", ERR_THREAD);
     }
 

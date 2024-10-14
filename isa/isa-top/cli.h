@@ -32,13 +32,7 @@
 #include <pthread.h>
 
 #include "error.h"
-
-typedef struct CLIArguments
-{
-    char *interface;
-	char sort;
-	int interval;
-} CLIArguments;
+#include "global.h"
 
 
 CLIArguments parse_arguments(int argc, char *argv[]);

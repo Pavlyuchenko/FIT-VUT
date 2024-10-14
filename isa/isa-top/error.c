@@ -1,5 +1,6 @@
 #include "error.h"
 #include "global.h"
+#include <ncurses.h>
 
 char errbuff[PCAP_ERRBUF_SIZE];
 
@@ -7,6 +8,7 @@ void close_all() {
 	if (app_context.packet_capture) {
 		pcap_close(app_context.packet_capture);
 	}
+	
     return;
 }
 
@@ -27,6 +29,9 @@ void throw_error(const char *message, ErrorType err_type) {
 		break;
 	case ERR_CLI:
 		fprintf(stderr, "ERROR: There has been an error with CLI %s.\n", message);
+		break;
+	case ERR_PACKET_CAPTURE:
+		fprintf(stderr, "ERROR: There has been an error with capturing %s.\n", message);
 		break;
     }
 
