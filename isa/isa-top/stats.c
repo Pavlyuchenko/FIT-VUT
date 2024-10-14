@@ -52,7 +52,6 @@ CommunicationInfo *add_communications(CommunicationInfo *first,
 
     first->Tx += second->Rx;
     first->Rx += second->Tx;
-	first->packets_sent += second->packets_sent;
 
     return first;
 }

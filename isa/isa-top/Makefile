@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra
-LDFLAGS = -lpcap -lpthread
+LDFLAGS = -lpcap -lpthread -lncurses
 
 # List all source files
 SRCS = isa-top.c \

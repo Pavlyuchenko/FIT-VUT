@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <ncurses.h>
 
 #include "error.h"
 
@@ -49,5 +50,6 @@ void update_node_position(Node *node, bool order);
 Node *init_node();
 
 void print_llist(int count);
+void display_network_data(int count);
 
 #endif // LINKED_LIST_H
