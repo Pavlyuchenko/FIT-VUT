@@ -9,8 +9,7 @@
 
 #include "isa-top.h"
 #include "error.h"
-
-AppContext app_context = {0};
+#include "global.c"
 
 int main(int argc, char *argv[]) {
 	app_context.cli_args =  parse_arguments(argc, argv);

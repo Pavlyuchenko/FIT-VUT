@@ -29,7 +29,7 @@ void insert_communication(CommunicationInfo *c_info) {
 
     if (node->data == NULL) {
         node->data = c_info;
-        node->data->packets_sent_Tx++;
+        node->data->packets_sent_Tx = 1;
         return;
     }
 

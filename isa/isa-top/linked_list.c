@@ -39,8 +39,9 @@ Node *get_node(CommunicationInfo *c_info) {
     if (curr_node == NULL) {
         curr_node = init_node();
         llist->head = curr_node;
-        curr_node->data = c_info;
-        curr_node->data->packets_sent_Rx = 1;
+        curr_node->data = NULL;
+		
+		return curr_node;
     }
 
     while (curr_node != NULL) {
@@ -228,16 +229,16 @@ void print_llist(int count) {
     }
 
     // Draw a horizontal line above the totals
-    mvhline(max_y - 3, 1, ACS_HLINE, max_x - 2);
+    mvhline(max_y - 4, 1, ACS_HLINE, max_x - 2);
 
     // Print totals
-    mvprintw(max_y - 2, 2, "Total Rx: %s (%ld p)", bytes_conversion(total_rx),
+    mvprintw(max_y - 3, 2, "Total Rx: %s (%ld p)", bytes_conversion(total_rx),
              total_packets_rx / app_context.cli_args.interval);
-    mvprintw(max_y - 1, 2, "Total Tx: %s (%ld p)", bytes_conversion(total_tx),
+    mvprintw(max_y - 2, 2, "Total Tx: %s (%ld p)", bytes_conversion(total_tx),
              total_packets_tx / app_context.cli_args.interval);
 
     // Print instructions
-    mvprintw(max_y - 1, max_x - 20, "Press 'q' to quit");
+    mvprintw(max_y - 2, max_x - 20, "Press 'q' to quit");
     attroff(COLOR_PAIR(1));
 
     refresh();

@@ -1,32 +1,33 @@
 CC = gcc
-CFLAGS = -Wall -Wextra
+CFLAGS = -Wall -Wextra -g
 LDFLAGS = -lpcap -lpthread -lncurses
 
-# List all source files
-SRCS = isa-top.c \
-       cli.c \
-       error.c \
-       packet_handler.c \
-       stats.c \
-	   linked_list.c
-
-# Generate object file names from source files
+SRCS = isa-top.c cli.c error.c linked_list.c packet_handler.c stats.c
 OBJS = $(SRCS:.c=.o)
+MAIN = isa-top
 
-# Main target
-isa-top: $(OBJS)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+TEST_SRCS = pcap_file_tests.c error.c linked_list.c packet_handler.c stats.c global.c
+TEST_OBJS = $(TEST_SRCS:.c=.o)
+TEST_MAIN = run_tests
 
-# Rule to create object files
-%.o: %.c
+.PHONY: all clean test
+
+all: $(MAIN)
+
+$(MAIN): $(OBJS)
+	$(CC) $(CFLAGS) -o $(MAIN) $(OBJS) $(LDFLAGS)
+
+test: $(TEST_MAIN)
+	./$(TEST_MAIN)
+
+$(TEST_MAIN): $(TEST_OBJS)
+	$(CC) $(CFLAGS) -o $(TEST_MAIN) $(TEST_OBJS) $(LDFLAGS)
+
+pcap_file_tests.o: pcap_file_tests.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean target
+.c.o:
+	$(CC) $(CFLAGS) -c $< -o $@
+
 clean:
-	rm -f isa-top $(OBJS)
-
-# Add debugging symbols for development
-debug: CFLAGS += -g
-debug: isa-top
-
-.PHONY: clean debug
+	$(RM) *.o *~ $(MAIN) $(TEST_MAIN)

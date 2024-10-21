@@ -96,12 +96,10 @@ void packet_handler(uint8_t *args, const struct pcap_pkthdr *header,
         }
 
     } else {
-        fprintf(stderr, "Unsupported protocol %d\n",
-                ethernet_header->ether_type);
+        // fprintf(stderr, "Unsupported protocol %d\n",
+        // ethernet_header->ether_type);
         return;
     }
-
-    // printf("srcIp: %s, dstIp: %s\n", src_ip, dst_ip);
 
     pthread_mutex_lock(&app_context.mutex);
     CommunicationInfo *ci = init_communication();

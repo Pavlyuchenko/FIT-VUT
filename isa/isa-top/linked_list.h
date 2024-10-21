@@ -54,6 +54,7 @@ Node *get_node(CommunicationInfo *c_info);
 void update_node_position(Node *node);
 Node *init_node();
 
+void print_node_data(Node *node);
 void print_llist(int count);
 void display_network_data(int count);
 
