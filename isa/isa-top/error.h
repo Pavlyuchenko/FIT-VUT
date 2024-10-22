@@ -1,3 +1,10 @@
+/**
+ * Author: Michal Pavlíček xpavlim00
+ * Date: 21. 10. 2024
+ *
+ * Description: global function for unified error handling
+ */
+
 #ifndef ERROR_H
 #define ERROR_H
 

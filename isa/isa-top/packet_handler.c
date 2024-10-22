@@ -1,8 +1,9 @@
+/**
+ * Author: Michal Pavlíček xpavlim00
+ * Date: 21. 10. 2024
+ */
+
 #include "packet_handler.h"
-#include "error.h"
-#include "stats.h"
-#include <netinet/in.h>
-#include <netinet/ip_icmp.h>
 
 void packet_handler(uint8_t *args, const struct pcap_pkthdr *header,
                     const uint8_t *packet) {

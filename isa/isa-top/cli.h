@@ -1,39 +1,44 @@
+/**
+ * Author: Michal Pavlíček xpavlim00
+ * Date: 21. 10. 2024
+ *
+ * Description: functions for handling cli arguments
+ */
+
 #ifndef CLI_H
 #define CLI_H
 
-#include <stdio.h>
+#include <ctype.h>
 #include <getopt.h>
-#include <unistd.h>
+#include <signal.h>
 #include <stdbool.h>
-#include <stdlib.h>
-#include <sys/types.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <signal.h>
 #include <time.h>
-#include <ctype.h>
+#include <unistd.h>
 
 // network headers
-#include <pcap/pcap.h>
 #include <arpa/inet.h>
-#include <netinet/ether.h>
-#include <netinet/ip6.h>
-#include <netinet/tcp.h>
-#include <netinet/ip_icmp.h>
-#include <netinet/in.h>
 #include <net/ethernet.h>
-#include <netinet/if_ether.h>
 #include <net/if_arp.h>
-#include <netinet/udp.h>
+#include <netinet/ether.h>
 #include <netinet/icmp6.h>
+#include <netinet/if_ether.h>
+#include <netinet/in.h>
+#include <netinet/ip6.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
+#include <pcap/pcap.h>
 
 // threading imports
 #include <pthread.h>
 
 #include "error.h"
 #include "global.h"
-
 
 CLIArguments parse_arguments(int argc, char *argv[]);
 

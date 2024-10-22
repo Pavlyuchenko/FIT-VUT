@@ -1,0 +1,131 @@
+.TH ISA-TOP 1 "October 2024" "Version 1.0" "User Commands"
+
+.SH NAME
+isa-top \- display real-time network traffic statistics by host
+
+.SH SYNOPSIS
+.B isa-top
+.RB [ \-i
+.IR interface ]
+.RB [ \-s
+.IR b|p ]
+.RB [ \-t
+.IR interval ]
+.RB [ \-c ]
+.RB [ \-h ]
+
+.SH DESCRIPTION
+.B isa-top
+is a command-line tool that captures and displays real-time network traffic statistics for individual IP addresses. It monitors network interfaces using libpcap and calculates transmission rates for each captured connection. The statistics are displayed in an interactive terminal interface using ncurses, with automatic updates.
+
+.SH OPTIONS
+.TP
+.BR \-i " " \fIinterface\fR
+Specifies the network interface to monitor. If used without an argument, lists all available network interfaces.
+
+.TP
+.BR \-s " " \fIb|p\fR
+Sort output by:
+.RS
+.TP
+.B b
+bytes per second (default)
+.TP
+.B p
+packets per second
+.RE
+
+.TP
+.BR \-t " " \fIinterval\fR
+Sets the update interval for statistics in seconds (default: 1)
+
+.TP
+.B \-c
+Show cumulative statistics over the entire duration of program execution
+
+.TP
+.B \-h
+Display help message and exit
+
+.SH OUTPUT
+The program displays a table with the following columns:
+
+.TP
+.B Source IP:Port
+Source IP address and port number
+
+.TP
+.B Dest IP:Port
+Destination IP address and port number
+
+.TP
+.B Proto
+Protocol (tcp, udp, icmp, icmpv6, etc.)
+
+.TP
+.B Rx b/s
+Received data rate in bits per second
+
+.TP
+.B Tx b/s
+Transmitted data rate in bits per second
+
+.TP
+.B Rx p/s
+Received packets per second
+
+.TP
+.B Tx p/s
+Transmitted packets per second
+
+Data rates are automatically scaled to appropriate units (K, M, G).
+
+.SH EXAMPLES
+.TP
+Monitor eth0 interface:
+.B isa-top -i eth0
+
+.TP
+List available interfaces:
+.B isa-top -i
+
+.TP
+Sort by packets per second:
+.B isa-top -i eth0 -s p
+
+.TP
+Update every 5 seconds:
+.B isa-top -i eth0 -t 5
+
+.TP
+Show cumulative statistics:
+.B isa-top -i eth0 -c
+
+.SH CONTROLS
+.TP
+.B q, Q
+Quit the program
+
+.SH EXIT STATUS
+.TP
+.B 0
+Success
+.TP
+.B 1
+Memory allocation error
+.TP
+.B 2
+Threading error
+.TP
+.B 3
+Command line argument error
+.TP
+.B 4
+Packet capture error
+
+.SH NOTES
+.PP
+The program requires root privileges.
+
+.SH AUTHOR
+Michal Pavlíček (xpavlim00@stud.fit.vutbr.cz)

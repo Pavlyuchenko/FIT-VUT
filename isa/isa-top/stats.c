@@ -1,11 +1,10 @@
-#include "stats.h"
-#include "error.h"
-#include "linked_list.h"
-#include <string.h>
+/**
+ * Author: Michal Pavlíček xpavlim00
+ * Date: 21. 10. 2024
+ */
 
-// variables for thread shared memory
-int packet_count = 0;
-int bites_sent = 0;
+#include "stats.h"
+#include "global.h"
 
 CommunicationInfo *init_communication() {
     CommunicationInfo *c_i = malloc(sizeof(*c_i));
@@ -62,6 +61,8 @@ CommunicationInfo *add_communications(CommunicationInfo *first,
 void *display_stats(void *arg) {
     CLIArguments *arguments = (CLIArguments *)arg;
 
+	app_context.seconds_passed = 1;
+
     // Initialize ncurses
     initscr();
     cbreak();
@@ -80,12 +81,13 @@ void *display_stats(void *arg) {
 
         timeout(arguments->interval * 1000);
         if (arguments->cumulative == 0) {
-            // init_llist();
+            init_llist();
         }
         int ch = getch();
         if (ch == 'q' || ch == 'Q') {
             break;
         }
+		app_context.seconds_passed++;
     }
 
     // Clean up ncurses

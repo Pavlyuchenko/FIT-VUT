@@ -1,15 +1,13 @@
 /**
  * isa-top : Application gathering statistics about network traffic
- * @Description: isa-top is an application that listens on specified interface
- *				 and outputs network traffic statistics. Written
- *				 for course ISA @ FIT VUT, Brno.
+ * @Description: isa-top is an application that listens on
+ * specified interface and outputs network traffic
+ * statistics. Written for course ISA @ FIT VUT, Brno.
  * @Author: Michal Pavlíček xpavlim00
  * @Note: Some starter code was taken from my IPK Project 2: A packet sniffer.
  */
 
 #include "isa-top.h"
-#include "error.h"
-#include "global.c"
 
 int main(int argc, char *argv[]) {
 	app_context.cli_args =  parse_arguments(argc, argv);

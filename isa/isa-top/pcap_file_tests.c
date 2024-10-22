@@ -208,6 +208,7 @@ void test_arbitrary_capture() {
 }
 
 int main() {
+	printf("Hello");
     test_icmp();
     test_arbitrary_capture();
     printf("All tests passed\n");
