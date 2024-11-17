@@ -18,8 +18,8 @@
 #include <pcap/pcap.h>
 #include <string.h>
 
-#define TEST_PCAP_FILE1 "icmp-data.pcap"
-#define TEST_PCAP_FILE2 "test_capture.pcap"
+#define TEST_PCAP_FILE1 "tests/icmp-data.pcap"
+#define TEST_PCAP_FILE2 "tests/test_capture.pcap"
 
 // Helper function to count nodes in the linked list
 int count_nodes() {
@@ -208,7 +208,6 @@ void test_arbitrary_capture() {
 }
 
 int main() {
-	printf("Hello");
     test_icmp();
     test_arbitrary_capture();
     printf("All tests passed\n");

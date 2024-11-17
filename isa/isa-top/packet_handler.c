@@ -9,18 +9,18 @@ void packet_handler(uint8_t *args, const struct pcap_pkthdr *header,
                     const uint8_t *packet) {
     (void)(args); // argument 'args' is unused
 
-    // only support Ethernet frames, which are 14 bytes long
-    int ETHERNET_HEADER_LENGTH = 14;
-
-    struct ether_header *ethernet_header = (struct ether_header *)packet;
-    packet += ETHERNET_HEADER_LENGTH; // skip the Ethernet header
-
     int packet_len_bytes = header->len;
     char src_ip[MAX_IP_LEN];
     char dst_ip[MAX_IP_LEN];
     uint16_t src_port = 0;
     uint16_t dst_port = 0;
     char protocol[MAX_PROTO_LEN];
+    
+	// only support Ethernet frames, which are 14 bytes long
+    int ETHERNET_HEADER_LENGTH = 14;
+
+    struct ether_header *ethernet_header = (struct ether_header *)packet;
+    packet += ETHERNET_HEADER_LENGTH; // skip the Ethernet header
 
     if (ntohs(ethernet_header->ether_type) == ETH_P_IP) {
         struct ip *ip_header = (struct ip *)packet;

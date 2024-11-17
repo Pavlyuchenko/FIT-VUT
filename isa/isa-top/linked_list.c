@@ -73,14 +73,13 @@ Node *get_node(CommunicationInfo *c_info) {
 // @order => 0 is transmission speed
 //			 1 is packets sent
 long int get_nodes_order(Node *node) {
-	if (app_context.seconds_passed == 0) {
-		app_context.seconds_passed = 1;
-	}
     if (app_context.cli_args.sort == 'b') {
-        return (node->data->Rx + node->data->Tx) / app_context.seconds_passed;
+        return (node->data->Rx + node->data->Tx) /
+               app_context.cli_args.interval;
     }
 
-    return (node->data->packets_sent_Rx + node->data->packets_sent_Tx) / app_context.seconds_passed;
+    return (node->data->packets_sent_Rx + node->data->packets_sent_Tx) /
+           app_context.cli_args.interval;
 }
 
 // Assumes nodes data have changed, therefore
@@ -216,14 +215,14 @@ void print_llist(int count) {
             mvprintw(row, 2, "%-23.23s", src);
             mvprintw(row, 26, "%-23.23s", dst);
             mvprintw(row, 50, "%-6.6s", curr_node->data->protocol);
-            mvprintw(row, 57, "%-8s", bytes_conversion(curr_node->data->Rx / app_context.seconds_passed));
-            mvprintw(row, 66, "%-8s", bytes_conversion(curr_node->data->Tx / app_context.seconds_passed));
+            mvprintw(row, 57, "%-8s",
+                     bytes_conversion(curr_node->data->Rx));
+            mvprintw(row, 66, "%-8s",
+                     bytes_conversion(curr_node->data->Tx));
             mvprintw(row, 75, "%-8ld",
-                     curr_node->data->packets_sent_Rx /
-						app_context.seconds_passed);
+                     curr_node->data->packets_sent_Rx);
             mvprintw(row, 84, "%-8ld",
-                     curr_node->data->packets_sent_Tx /
-                         app_context.seconds_passed);
+                     curr_node->data->packets_sent_Tx);
 
             total_packets_rx += curr_node->data->packets_sent_Rx;
             total_packets_tx += curr_node->data->packets_sent_Tx;
@@ -240,13 +239,22 @@ void print_llist(int count) {
     mvhline(max_y - 4, 1, ACS_HLINE, max_x - 2);
 
     // Print totals
-    mvprintw(max_y - 3, 2, "Total Rx: %s (%ld p)", bytes_conversion(total_rx),
-             total_packets_rx / app_context.cli_args.interval);
-    mvprintw(max_y - 2, 2, "Total Tx: %s (%ld p)", bytes_conversion(total_tx),
-             total_packets_tx / app_context.cli_args.interval);
+    if (app_context.cli_args.cumulative) {
+        mvprintw(max_y - 3, 2, "Total Rx: %s (%ld p)",
+                 bytes_conversion(total_rx), total_packets_rx);
+        mvprintw(max_y - 2, 2, "Total Tx: %s (%ld p)",
+                 bytes_conversion(total_tx), total_packets_tx);
+    } else {
+        mvprintw(max_y - 3, 2, "Total Rx: %s (%ld p)",
+                 bytes_conversion(total_rx),
+                 total_packets_rx / app_context.cli_args.interval);
+        mvprintw(max_y - 2, 2, "Total Tx: %s (%ld p)",
+                 bytes_conversion(total_tx),
+                 total_packets_tx / app_context.cli_args.interval);
+    }
 
     // Print instructions
-    mvprintw(max_y - 2, max_x - 20, "Press 'q' to quit");
+    mvprintw(max_y - 2, max_x - 26, "Press 'Ctrl + C' to quit");
     attroff(COLOR_PAIR(1));
 
     refresh();

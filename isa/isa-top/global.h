@@ -27,7 +27,6 @@ typedef struct AppContext {
     pcap_t *packet_capture;
     pthread_mutex_t mutex;
     CLIArguments cli_args;
-	int seconds_passed;
 } AppContext;
 
 extern AppContext app_context;

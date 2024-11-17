@@ -61,13 +61,9 @@ CommunicationInfo *add_communications(CommunicationInfo *first,
 void *display_stats(void *arg) {
     CLIArguments *arguments = (CLIArguments *)arg;
 
-	app_context.seconds_passed = 1;
-
     // Initialize ncurses
     initscr();
-    cbreak();
     noecho();
-    keypad(stdscr, TRUE);
     curs_set(0); // Hide the cursor
 
     // Initialize colors
@@ -78,16 +74,11 @@ void *display_stats(void *arg) {
         pthread_mutex_lock(&app_context.mutex);
         print_llist(MAX_DISPLAY_ROWS);
         pthread_mutex_unlock(&app_context.mutex);
-
-        timeout(arguments->interval * 1000);
-        if (arguments->cumulative == 0) {
+		if (arguments->cumulative == 0) {
             init_llist();
         }
-        int ch = getch();
-        if (ch == 'q' || ch == 'Q') {
-            break;
-        }
-		app_context.seconds_passed++;
+
+        sleep(arguments->interval);
     }
 
     // Clean up ncurses
