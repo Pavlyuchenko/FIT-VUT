@@ -111,8 +111,8 @@ void packet_handler(uint8_t *args, const struct pcap_pkthdr *header,
     ci->src_port = src_port;
     ci->dst_port = dst_port;
 
-    ci->Rx = packet_len_bytes;
-    ci->Tx = 0;
+    ci->Rx = 0;
+    ci->Tx = packet_len_bytes;
     ci->packets_sent_Tx = 1;
     insert_communication(ci);
     pthread_mutex_unlock(&app_context.mutex);
