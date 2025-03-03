@@ -3,9 +3,13 @@
 
 from enum import Enum, auto
 import sys
+import json
 
 # Chyby
 ERRORS = { 
+    "PARAMETER_ERR": 10,
+    "FILE_OPEN_ERR": 11,
+    "FILE_WRITE_ERR": 12,
     "LEXICAL_ERR": 21,
     "SYNTAX_ERR": 22,
     "SEM_MAIN_ERR": 31,
@@ -15,7 +19,7 @@ ERRORS = {
     "SEM_OTHER_ERR": 35
 }
 
-keywords = ["class", "self", "super", "nil", "true", "false"]
+keywords = ["class", "nil", "true", "false"]
 class_keywords = ["Object", "Nil", "True", "False", "Integer", "String", "Block"]
 
 class TokenType(Enum):
@@ -156,6 +160,11 @@ def throw_error(ret_code):
     sys.exit(ret_code)
 
 
+class StrEncoder(json.JSONEncoder):
+    def default(self, obj):
+        return str(obj)
+
+
 class Parser:
     def __init__(self):
         self.current_token = get_next_token()
@@ -177,31 +186,33 @@ class Parser:
         while self.current_token.type == TokenType.KEYWORD:
             ast["classes"].append(self.class_())
 
-        print(ast)
+        print(json.dumps(ast, indent=2, cls=StrEncoder))
 
 
     def class_(self):
         self.consume(TokenType.KEYWORD, "class")
-        class_name = self.consume(TokenType.IDENTIFIER)
+        class_name = self.consume(TokenType.IDENTIFIER).lexeme
         self.consume(TokenType.COLON)
-        parent = self.consume(TokenType.CLASS_NAME)
+        parent = self.consume(TokenType.CLASS_NAME).lexeme
         self.consume(TokenType.BRACE_LEFT)
         method = self.method()
         self.consume(TokenType.BRACE_RIGHT)
         
         return {
             "type": "class",
-            "class_name": class_name,
+            "name": class_name,
             "parent": parent,
             "method": method
         }
 
 
     def method(self):
-        print("here")
-        selectors = self.selector()
-        blocks = self.block()
-        # TODO: Can be another method
+        selectors = []
+        blocks = []
+        while self.current_token.type == TokenType.IDENTIFIER:
+            selectors.append(self.selector())
+            blocks.append(self.block())
+
         return {
             "type": "method",
             "selectors": selectors,
@@ -211,9 +222,10 @@ class Parser:
 
     def selector(self):
         selectors = []
-        print(self.current_token)
         while self.current_token.type == TokenType.IDENTIFIER:
-            selectors.append(self.consume(TokenType.IDENTIFIER))
+            selectors.append(self.consume(TokenType.IDENTIFIER).lexeme)
+            if (self.current_token.type == TokenType.COLON):
+                self.consume(TokenType.COLON)
 
         return selectors
 
@@ -236,30 +248,90 @@ class Parser:
         parameters = []
         while self.current_token.type == TokenType.COLON:
             self.consume(TokenType.COLON)
-            parameters.append(self.consume(TokenType.IDENTIFIER))
+            parameters.append(self.consume(TokenType.IDENTIFIER).lexeme)
 
         return parameters
 
 
     def block_stat(self):
-        statement_name = self.consume(TokenType.IDENTIFIER)
-        self.consume(TokenType.EQUALS)
-        expression = self.expression()
-        self.consume(TokenType.DOT)
-        # TODO: Can be more statements
+        statements = []
+        while self.current_token.type == TokenType.IDENTIFIER:
+            statement = {}
+
+            statement["name"] = self.consume(TokenType.IDENTIFIER).lexeme
+            self.consume(TokenType.EQUALS)
+            statement["expression"] = self.expression()
+            self.consume(TokenType.DOT)
+
+            statements.append(statement)
 
         return {
-            "type": "statements",
-            "expressions": expression
+            "type": "block_statements",
+            "statements": statements
         }
 
     def expression(self):
-        # TODO: This is only placeholder
-        self.consume(TokenType.INTEGER)
+        base = self.expr_base()
+        tail = self.expr_tail()
 
         return {
-            "type": "1"
+            "base": base,
+            "tail": tail
         }
+
+
+    def expr_base(self):
+        if (self.current_token.type == TokenType.INTEGER):
+            val = self.consume(TokenType.INTEGER)
+            return { "type": "integer", "value": val.lexeme }
+        elif (self.current_token.type == TokenType.STRING):
+            val = self.consume(TokenType.STRING)
+            return { "type": "string", "value": val.lexeme }
+        elif (self.current_token.type == TokenType.IDENTIFIER):
+            id = self.consume(TokenType.IDENTIFIER)
+            return { "type": "identifier", "id": id.lexeme }
+        elif (self.current_token.type == TokenType.CLASS_NAME):
+            class_name = self.consume(TokenType.CLASS_NAME)
+            return { "type": "class_name", "name": class_name }
+        elif (self.current_token.type == TokenType.BRACKET_LEFT):
+            block = self.block()
+            return block
+        elif (self.current_token.type == TokenType.PARENTHESIS_LEFT):
+            self.consume(TokenType.PARENTHESIS_LEFT)
+            expression = self.expression()
+            self.consume(TokenType.PARENTHESIS_RIGHT)
+            return { "type": "expression", "expression": expression } 
+
+
+    def expr_tail(self):
+        print(self.current_token)
+        if self.current_token.type != TokenType.IDENTIFIER:
+            return self.expr_sel()
+        id = self.consume(TokenType.IDENTIFIER)
+        if (self.current_token.type == TokenType.COLON):
+            return {
+                    "type": "expr_tail",
+                    "id": id.lexeme,
+                    "sel": self.expr_sel(id.lexeme)
+                }
+
+        # Only ID, END
+        return { "type": "expr_tail", "id": id.lexeme }
+
+
+    def expr_sel(self, id=""):
+        # coming from sel
+        if len(id) == 0:
+            if self.current_token.type == TokenType.IDENTIFIER:
+                id = self.consume(TokenType.IDENTIFIER)
+            else:
+                return
+
+        self.consume(TokenType.COLON)
+        base = self.expr_base()
+        sel = self.expr_sel()
+
+        return { "type": "expr_sel", "base": base, "sel": sel }
 
 
 parser = Parser()
