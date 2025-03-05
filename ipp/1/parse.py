@@ -207,15 +207,18 @@ class Class(AST_Node):
 
 
 class Method(AST_Node):
-    def __init__(self, selectors, block):
-        self.selectors = selectors  # List of selectors
+    def __init__(self, selector, block):
+        self.selector = selector  # List of selectors
         self.block = block  # Block object
 
     def accept(self, visitor, parent=None):
         return visitor.visit_method(self, parent)
 
     def __str__(self):
-        return f"Method(selectors={self.selectors}, block={self.block})"
+        return f"Method(selector={self.selector}, block={self.block})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Block(AST_Node):
@@ -339,11 +342,13 @@ class NodeFactory:
         elif node_type == "class":
             return Class(data["name"], data["parent"], data["methods"])
         elif node_type == "method":
-            return Method(data["selectors"], data["block"])
+            return Method(data["selector"], data["block"])
         elif node_type == "expression":
             return Expression(data["base"], data["tail"])
         elif node_type == "block":
             return Block(data["parameters"], data["statements"])
+        elif node_type == "statement":
+            return Statement(data["name"], data["expression"])
         elif node_type == "integer":
             return Integer(data["value"])
         elif node_type == "string":
@@ -402,23 +407,26 @@ class Parser:
         })
 
     def _method(self):
-        selectors = []
+        methods = []
         while self.current_token.type == TokenType.IDENTIFIER:
-            selectors.append(self._selector())
+            selector = self._selector()
             block = self._block()
-
-        return NodeFactory.create_node("method", {
-            "type": "method",
-            "selectors": selectors,
-            "block": block
-        })
+            methods.append(
+                NodeFactory.create_node("method", {
+                    "type": "method",
+                    "selector": selector,
+                    "block": block
+                })
+            )
+        return methods
 
     def _selector(self):
-        selectors = []
+        selectors = ""
         while self.current_token.type == TokenType.IDENTIFIER:
-            selectors.append(self._consume(TokenType.IDENTIFIER).lexeme)
+            selectors += (self._consume(TokenType.IDENTIFIER).lexeme)
             if (self.current_token.type == TokenType.COLON):
                 self._consume(TokenType.COLON)
+                selectors += ":"
 
         return selectors
 
@@ -446,14 +454,15 @@ class Parser:
     def _block_stat(self):
         statements = []
         while self.current_token.type == TokenType.IDENTIFIER:
-            statement = {}
-
-            statement["name"] = self._consume(TokenType.IDENTIFIER).lexeme
+            name = self._consume(TokenType.IDENTIFIER).lexeme
             self._consume(TokenType.EQUALS)
-            statement["expression"] = self._expression()
+            expression = self._expression()
             self._consume(TokenType.DOT)
 
-            statements.append(statement)
+            statements.append(NodeFactory.create_node("statement", {
+                "name": name,
+                "expression": expression 
+            }))
 
         return statements
 
@@ -541,12 +550,13 @@ class XML_generator_visitor(AST_visitor):
         class_el = ET.SubElement(parent, "class")
         class_el.set("name", node.name)
         class_el.set("parent", node.parent)
+        for method in node.methods:
+            method.accept(self, class_el)
 
-    def visit_method(self, node, parent):
-        for selector, block in zip(node.selectors, node.blocks):
-            method_el = ET.SubElement(parent, "method")
-            method_el.set("selector", selector)
-            block.accept(self, method_el)
+    def visit_method(self, node: AST_Node, parent):
+        method_el = ET.SubElement(parent, "method")
+        method_el.set("selector", node.selector)
+        node.block.accept(self, method_el)
 
     def visit_block(self, node, parent):
         block_el = ET.SubElement(parent, "block")
@@ -594,9 +604,6 @@ class XML_generator_visitor(AST_visitor):
         node.base.accept(self, arg_el)
         if node.sel:
             node.sel.accept(self, parent)
-        
-
-
 
 
 parser = Parser()
