@@ -6,6 +6,7 @@ import sys
 import json
 import xml.etree.ElementTree as ET
 
+
 # Chyby
 ERRORS = { 
     "PARAMETER_ERR": 10,
@@ -25,8 +26,9 @@ def throw_error(ret_code):
     sys.exit(ret_code)
 
 
-keywords = ["class", "nil", "true", "false"]
-class_keywords = ["Object", "Nil", "True", "False", "Integer", "String", "Block"]
+keywords = ["class"]
+class_names = ["Object", "Nil", "True", "False", "Integer", "String", "Block"]
+user_class_names = []
 
 class TokenType(Enum):
     IDENTIFIER = auto()
@@ -78,6 +80,8 @@ def get_char() -> str:
     return chr
 
 
+first_comment_seen = False
+first_comment = ""
 # tokenizer, lexical analysis
 # reads stdin character by characted
 # and based on a finite automaton it returns either
@@ -86,10 +90,18 @@ def get_next_token() -> Token:
     curr_ch = get_char()
     token = Token(TokenType.UNKNOWN, "")
 
+    while curr_ch.isspace():
+        curr_ch = get_char()
+
     # handles INTEGER input
     if curr_ch.isdigit() or curr_ch in ("+", "-"):
         token.lexeme = curr_ch
         token.type = TokenType.INTEGER
+
+        if curr_ch in ("+", "-"):
+            if not (curr_ch := get_char()).isdigit():
+                throw_error(ERRORS["LEXICAL_ERR"])
+            token.lexeme += curr_ch 
 
         while (curr_ch := get_char()).isdigit():
             token.lexeme += curr_ch
@@ -105,15 +117,25 @@ def get_next_token() -> Token:
 
         if token.lexeme in keywords:
             token.type = TokenType.KEYWORD
-        elif token.lexeme in class_keywords:
-            token.type = TokenType.CLASS_NAME
+        elif token.lexeme in class_names:
+            token.type = TokenType.IDENTIFIER
         else:
             token.type = TokenType.IDENTIFIER
 
     # COMMENT
     elif curr_ch == '"':
+        comment = ""
         while (curr_ch := get_char()) != '"':
-            pass
+            if not curr_ch:  # Unclosed comment
+                throw_error(ERRORS["LEXICAL_ERR"])
+            comment += curr_ch
+
+        global first_comment_seen
+        global first_comment
+        if not first_comment_seen:
+            first_comment_seen = True
+            first_comment = comment
+            
         return get_next_token()
 
     # STRING
@@ -121,6 +143,15 @@ def get_next_token() -> Token:
         token.type = TokenType.STRING
         # TODO: Handle escape sequences??
         while (curr_ch := get_char()) != "'":
+            # check ascii int value
+            if ord(curr_ch) < 32:
+                throw_error(ERRORS["LEXICAL_ERR"])
+
+            if curr_ch == "\\":
+                token.lexeme += curr_ch
+                curr_ch = get_char()
+                if curr_ch not in ("\\", "n", "\'"):
+                    throw_error(ERRORS["LEXICAL_ERR"])
             token.lexeme += curr_ch
 
     # SYMBOLS
@@ -152,19 +183,18 @@ def get_next_token() -> Token:
         token.type = TokenType.DOT
         token.lexeme = "."
     elif curr_ch == "(":
-        token.type = TokenType.PARENTHESIS_LEFT;
+        token.type = TokenType.PARENTHESIS_LEFT
         token.lexeme = "("
     elif curr_ch == ")":
-        token.type = TokenType.PARENTHESIS_RIGHT;
+        token.type = TokenType.PARENTHESIS_RIGHT
         token.lexeme = ")"
 
     # EOF
     elif not curr_ch:
-        token.type = TokenType.TOKEN_EOF;
+        token.type = TokenType.TOKEN_EOF
 
-    # space
-    elif curr_ch in (" ", "\t", "\n"):
-        return get_next_token()
+    else:
+        throw_error(ERRORS["LEXICAL_ERR"])
 
     return token
 
@@ -241,8 +271,8 @@ class Statement(AST_Node):
         self.name = name
         self.expression = expression
 
-    def accept(self, visitor, parent=None):
-        return visitor.visit_statement(self, parent)
+    def accept(self, visitor, parent=None, count=1):
+        return visitor.visit_statement(self, parent, count)
 
     def __str__(self):
         return f"Statement(name={self.name}, expression={self.expression})"
@@ -327,8 +357,8 @@ class Sel(AST_Node):
         self.base = base
         self.sel = sel
 
-    def accept(self, visitor, parent=None):
-        return visitor.visit_sel(self, parent)
+    def accept(self, visitor, parent=None, order=1):
+        return visitor.visit_sel(self, parent, order)
 
     def __str__(self):
         return f"Sel(base={self.base}, sel={self.sel})"
@@ -372,6 +402,8 @@ class Parser:
     # loads another token and returns the checked one
     def _consume(self, expected_type: TokenType, expected_lex: str = ""):
         if self.current_token.type != expected_type:
+            print(self.current_token)
+            print(expected_type)
             throw_error(ERRORS["SYNTAX_ERR"])
 
         if (
@@ -385,16 +417,24 @@ class Parser:
 
     def program(self):
         classes = []
+
+        if self.current_token.type != TokenType.KEYWORD:
+            throw_error(ERRORS["SYNTAX_ERR"])
         while self.current_token.type == TokenType.KEYWORD:
             classes.append(self._class())
 
         return NodeFactory.create_node("program", {"classes": classes})
 
     def _class(self):
-        self._consume(TokenType.KEYWORD, "class")
+        tst = self._consume(TokenType.KEYWORD, "class")
         class_name = self._consume(TokenType.IDENTIFIER).lexeme
+        user_class_names.append(class_name)
         self._consume(TokenType.COLON)
-        parent = self._consume(TokenType.CLASS_NAME).lexeme
+        parent = self._consume(TokenType.IDENTIFIER).lexeme
+
+        if not (parent in class_names or parent in user_class_names):
+            throw_error(ERRORS["SEM_UNDEFINED_ERR"])
+
         self._consume(TokenType.BRACE_LEFT)
         methods = self._method()
         self._consume(TokenType.BRACE_RIGHT)
@@ -448,6 +488,7 @@ class Parser:
         while self.current_token.type == TokenType.COLON:
             self._consume(TokenType.COLON)
             parameters.append(self._consume(TokenType.IDENTIFIER).lexeme)
+            print(parameters)
 
         return parameters
 
@@ -469,6 +510,9 @@ class Parser:
     def _expression(self):
         base = self._expr_base()
         tail = self._expr_tail()
+
+        if isinstance(base, Expression) and base.tail is None:
+            return base
 
         return NodeFactory.create_node("expression", {
             "base": base,
@@ -501,16 +545,16 @@ class Parser:
         if self.current_token.type != TokenType.IDENTIFIER:
             return None
 
-        id = self._consume(TokenType.IDENTIFIER)
+        id = [self._consume(TokenType.IDENTIFIER).lexeme]
         if (self.current_token.type == TokenType.COLON):
-            sel = self._expr_sel(id.lexeme)
+            sel = self._expr_sel(id)
             return NodeFactory.create_node("tail", data={
-                    "id": id.lexeme,
+                    "id": ':'.join(id) + ':',
                     "sel": sel
                 })
 
         # unary message
-        return NodeFactory.create_node("tail", data={"id": id.lexeme })
+        return NodeFactory.create_node("tail", data={"id": id[0] })
 
     def _expr_sel(self, id):
         self._consume(TokenType.COLON)
@@ -521,7 +565,8 @@ class Parser:
         if self.current_token.type == TokenType.IDENTIFIER:
             next_id = self._consume(TokenType.IDENTIFIER)
             if self.current_token.type == TokenType.COLON:
-                sel = self._expr_sel(next_id.lexeme)
+                id.append(next_id.lexeme)
+                sel = self._expr_sel(id)
 
         return NodeFactory.create_node("sel", data={"base": base, "sel": sel})
 
@@ -538,10 +583,48 @@ class AST_visitor:
     def visit_sel(self, node, parent=None): pass
 
 
+class Semantic_visitor():
+    def __init__(self):
+        self.classes = {}
+        self.current_class = None
+        self.predefined_classes = ["Object", "Nil", "True", "False", "Integer", "String", "Block"]
+
+    def visit_program(self, node, parent=None):
+        for cls in node.classes:
+            cls.accept(self)
+        if "Main" not in self.classes:
+            throw_error(ERRORS["SEM_MAIN_ERR"])
+
+    def visit_class(self, node, parent=None):
+        if node.name in self.classes:
+            self.throw_error(ERRORS["SEM_COLISION_ERR"])
+        self.classes[node.name] = node
+        if node.parent not in self.predefined_classes and node.parent not in self.classes:
+            self.throw_error(ERRORS["SEM_UNDEFINED_ERR"])
+        self.current_class = node.name
+        for method in node.methods:
+            method.accept(self)
+        self.current_class = None
+
+    def visit_method(self, node, parent=None):
+        # print method name
+        print(f"Method: {node.selector}")
+        node.block.accept(self)
+
+    def visit_block(self, node, parent=None):
+        self.current_block_vars = node.parameters
+        # node.statements.accept(self)
+
+
 class XML_generator_visitor(AST_visitor):
     def visit_program(self, node, parent=None):
         root = ET.Element("program")
         root.set("language", "SOL25")
+
+        global first_comment_seen
+        global first_comment
+        if first_comment_seen:
+            root.set("description", first_comment)
         for cls in node.classes:
             cls.accept(self, root)
         return root
@@ -561,62 +644,118 @@ class XML_generator_visitor(AST_visitor):
     def visit_block(self, node, parent):
         block_el = ET.SubElement(parent, "block")
         block_el.set("arity", str(len(node.parameters)))
+        count = 1
         for param in node.parameters:
             param_el = ET.SubElement(block_el, "parameter")
+            param_el.set("order", str(count))
             param_el.set("name", param)
+            count += 1
+        count = 1
         for stmt in node.statements:
-            stmt.accept(self, block_el)
+            stmt.accept(self, block_el, count)
+            count += 1
 
-    def visit_statement(self, node, parent):
+    def visit_statement(self, node, parent, order=1):
         assign_el = ET.SubElement(parent, "assign")
+        assign_el.set("order", str(order))
         var_el = ET.SubElement(assign_el, "var")
         var_el.set("name", node.name)
         node.expression.accept(self, assign_el)
 
     def visit_expression(self, node, parent):
-        expr_el = ET.SubElement(parent, "expression")
-        node.base.accept(self, expr_el)
+        expr_el = ET.SubElement(parent, "expr")
         if node.tail:
-            node.tail.accept(self, expr_el)
+            test = ET.SubElement(expr_el, "send")
+            test.set("selector", node.tail.id)
+
+            if isinstance(node.base, Expression):
+                node.base.accept(self, test)
+                node.tail.accept(self, test)
+            else:
+                expr2_el = ET.SubElement(test, "expr")
+                node.base.accept(self, expr2_el)
+                node.tail.accept(self, test)
+
+        else:
+            node.base.accept(self, expr_el)
 
     def visit_base(self, node, parent):
         if isinstance(node, Integer):
-            val_el = ET.SubElement(parent, "integer")
-            val_el.text = node.value
+            val_el = ET.SubElement(parent, "literal")
+            val_el.set("class", "Integer")
+            val_el.set("value", node.value)
         elif isinstance(node, String):
-            val_el = ET.SubElement(parent, "string")
-            val_el.text = node.value
+            val_el = ET.SubElement(parent, "literal")
+            val_el.set("class", "String")
+            val_el.set("value", node.value)
+
         elif isinstance(node, Identifier):
-            var_el = ET.SubElement(parent, "var")
-            var_el.set("name", node.id)
+            class_names_lower = {name.lower() for name in class_names}
+            if node.id in class_names:
+                var_el = ET.SubElement(parent, "literal")
+                var_el.set("class", "class")
+            elif node.id.lower() in class_names_lower:
+                var_el = ET.SubElement(parent, "literal")
+                var_el.set("class", node.id.capitalize())
+            elif node.id in user_class_names:
+                var_el = ET.SubElement(parent, "literal")
+                var_el.set("class", "class")
+            else:
+                var_el = ET.SubElement(parent, "var")
+                var_el.set("name", node.id)
+                return
+            var_el.set("value", node.id)
         elif isinstance(node, ClassName):
-            class_el = ET.SubElement(parent, "class_name")
+            class_el = ET.SubElement(parent, "literal")
+            class_el.set("class", "class")
             class_el.set("name", node.name)
 
-    def visit_tail(self, node, parent):
-        tail_el = ET.SubElement(parent, "message")
-        tail_el.set("selector", node.id)
-        if node.sel:
-            node.sel.accept(self, tail_el)
 
-    def visit_sel(self, node, parent):
-        arg_el = ET.SubElement(parent, "argument")
-        node.base.accept(self, arg_el)
+    def visit_tail(self, node, parent):
         if node.sel:
             node.sel.accept(self, parent)
+
+    def visit_sel(self, node, parent, order=1):
+        arg_el = ET.SubElement(parent, "arg")
+        arg_el.set("order", str(order))
+        if isinstance(node.base, Block):
+            expr_el = ET.SubElement(arg_el, "expr")
+            node.base.accept(self, expr_el)
+        else:
+            if isinstance(node.base, Expression):
+                node.base.accept(self, arg_el)
+            else:
+                expr_el = ET.SubElement(arg_el, "expr")
+                node.base.accept(self, expr_el)
+
+        if node.sel:
+            node.sel.accept(self, parent, order+1)
 
 
 parser = Parser()
 ast = parser.program()
 
-print(str(ast))
+# SEMANTICS
+semantic_checker = Semantic_visitor()
+ast.accept(semantic_checker)
+
 
 # XML
 visitor = XML_generator_visitor()
 root = ast.accept(visitor)
 tree = ET.ElementTree(root)
-ET.indent(tree, space="    ")
-tree.write("output.xml", encoding="UTF-8", xml_declaration=True)
+ET.indent(tree, space="  ")
+
+import xml.sax.saxutils as saxutils
+xml_str = ET.tostring(root, encoding="unicode")
+xml_str = saxutils.unescape(xml_str)
+with open("output.xml", "w", encoding="utf-8") as f:
+    # add xml declaration
+    f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+    f.write(xml_str)
+
+# write the tree to stdout
+ET.dump(tree.getroot())
 
 
 

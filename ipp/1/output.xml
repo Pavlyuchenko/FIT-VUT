@@ -1,128 +1,16 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <program language="SOL25">
-    <class name="Main" parent="Object">
-        <method selector="run">
-            <block arity="0">
-                <assign>
-                    <var name="x" />
-                    <expression>
-                        <var name="self" />
-                        <message selector="compute">
-                            <argument>
-                                <integer>3</integer>
-                            </argument>
-                            <argument>
-                                <integer>2</integer>
-                            </argument>
-                            <argument>
-                                <integer>5</integer>
-                            </argument>
-                        </message>
-                    </expression>
-                </assign>
-                <assign>
-                    <var name="x" />
-                    <expression>
-                        <var name="self" />
-                        <message selector="plusOne">
-                            <argument>
-                                <expression>
-                                    <var name="self" />
-                                    <message selector="vysl" />
-                                </expression>
-                            </argument>
-                        </message>
-                    </expression>
-                </assign>
-                <assign>
-                    <var name="y" />
-                    <expression>
-                        <var name="x" />
-                        <message selector="asString" />
-                    </expression>
-                </assign>
-            </block>
-        </method>
-        <method selector="plusOne:">
-            <block arity="1">
-                <parameter name="x" />
-                <assign>
-                    <var name="r" />
-                    <expression>
-                        <var name="x" />
-                        <message selector="plus">
-                            <argument>
-                                <integer>1</integer>
-                            </argument>
-                        </message>
-                    </expression>
-                </assign>
-            </block>
-        </method>
-        <method selector="compute:and:and:">
-            <block arity="3">
-                <parameter name="x" />
-                <parameter name="y" />
-                <parameter name="z" />
-                <assign>
-                    <var name="a" />
-                    <expression>
-                        <var name="x" />
-                        <message selector="plus">
-                            <argument>
-                                <var name="y" />
-                            </argument>
-                        </message>
-                    </expression>
-                </assign>
-                <assign>
-                    <var name="_" />
-                    <expression>
-                        <var name="self" />
-                        <message selector="vysl">
-                            <argument>
-                                <var name="a" />
-                            </argument>
-                        </message>
-                    </expression>
-                </assign>
-                <assign>
-                    <var name="_" />
-                    <expression>
-                        <expression>
-                            <expression>
-                                <var name="self" />
-                                <message selector="vysl" />
-                            </expression>
-                            <message selector="greaterThan">
-                                <argument>
-                                    <integer>0</integer>
-                                </argument>
-                            </message>
-                        </expression>
-                        <message selector="ifTrue">
-                            <argument>
-                                <block arity="0">
-                                    <assign>
-                                        <var name="u" />
-                                        <expression>
-                                            <var name="self" />
-                                            <message selector="vysl">
-                                                <argument>
-                                                    <integer>1</integer>
-                                                </argument>
-                                            </message>
-                                        </expression>
-                                    </assign>
-                                </block>
-                            </argument>
-                            <argument>
-                                <block arity="0" />
-                            </argument>
-                        </message>
-                    </expression>
-                </assign>
-            </block>
-        </method>
-    </class>
+  <class name="Main" parent="Object">
+    <method selector="run">
+      <block arity="1">
+        <parameter order="1" name="Main" />
+        <assign order="1">
+          <var name="x" />
+          <expr>
+            <literal class="Integer" value="5" />
+          </expr>
+        </assign>
+      </block>
+    </method>
+  </class>
 </program>
