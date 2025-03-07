@@ -1,6 +1,4 @@
 class Main : Object {
-            run [
-                :Main |
-                x := 5.
-            ]
+            run [|]
+            self [|]
         }
