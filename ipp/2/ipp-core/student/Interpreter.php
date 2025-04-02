@@ -33,14 +33,20 @@ class SOL_Class {
 class SOL_Method {
 	public string $name;
 	public bool $class_method;
+	private ?\Closure $implementation;
 
-	public function __construct(string $name, bool $class_method=false) {
+	public function __construct(string $name, bool $class_method=false, ?\Closure $implementation = null) {
 		$this->name = $name;
 		$this->class_method = $class_method;
+		$this->implementation = $implementation;
 	}
 
 	public function __toString(): string {
 		return "Method: $this->name";
+	}
+
+	public function call(array $args) {
+		return ($this->implementation)($args);
 	}
 }
 
@@ -49,7 +55,11 @@ function init_sol_objects(): array {
 	$classes = [];
 
 	$object = new SOL_Class("Object");
-	$object->add_method(new SOL_Method("identicalTo:"));
+	$identicalMethod = new SOL_Method("identicalTo:", false, function($args) {
+		return $args[0] + $args[1];
+	});
+
+	$object->add_method($identicalMethod);
 	$object->add_method(new SOL_Method("equalTo:"));
 	$object->add_method(new SOL_Method("asString"));
 	$object->add_method(new SOL_Method("isNumber"));
@@ -122,6 +132,10 @@ class Interpreter extends AbstractInterpreter
 
 		$this->classes = init_sol_objects();
 
+		// TODO: Start here, looks good
+		$result = $this->classes[0]->methods[0]->call([3, 5]);
+		$this->stdout->writeString("3 + 5 = $result\n");
+		
 		foreach ($this->classes as $classObj) {
 			$this->stdout->writeString($classObj);
 			$this->stdout->writeString("\n");
