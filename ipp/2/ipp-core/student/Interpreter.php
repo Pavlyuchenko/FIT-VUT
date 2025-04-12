@@ -126,7 +126,14 @@ function init_sol_objects(): array {
 
 	$string = new SOL_Class("String", $object);
 	$string->add_method(new SOL_Method("read", true));
-	$string->add_method(new SOL_Method("print"));
+
+	$method = new SOL_Method("print", false, function($args)
+	{
+		echo $args[0]->getAttribute("value");
+		return;
+	});
+	$string->add_method($method);
+
 	$string->add_method(new SOL_Method("equalTo:"));
 	$string->add_method(new SOL_Method("asString"));
 	$string->add_method(new SOL_Method("asInteger"));
@@ -231,7 +238,8 @@ class Interpreter extends AbstractInterpreter
 		$isClassMethod = false;
 		
 		$implementation = function($args) use ($blockNode) {
-			$context = new ExecutionContext($this);
+			$self = $args[0];
+			$context = new ExecutionContext($this, $self, $self->getClass());
 
 			$parameters = $blockNode->getElementsByTagName("parameter");
 			for ($i = 0; $i < $parameters->length; $i++) {
@@ -313,7 +321,8 @@ class Interpreter extends AbstractInterpreter
 		
 		// Debug: Print all variables in the context
 		$this->stdout->writeString("\n--- Variables in context after block execution ---\n");
-		$variables = $context->getAllVariables(); // You'll need to add this method to ExecutionContext
+		// $variables = $context->getAllVariables(); // You'll need to add this method to ExecutionContext
+		$variables = [];
 		foreach ($variables as $name => $value) {
 			$valueStr = $value instanceof SOL_Object 
 				? "Instance of " . $value->getClass()->name
@@ -360,7 +369,7 @@ class Interpreter extends AbstractInterpreter
 
 	private function sendMessage(SOL_Object $receiver, string $selector, array $args) {
 		$class = $receiver->getClass();
-		
+
 		// Find the method in the class hierarchy
 		$method = $this->findMethodInHierarchy($class, $selector);
 		if (!$method) {
