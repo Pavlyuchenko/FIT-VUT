@@ -1,0 +1,85 @@
+NAME
+       isa-top - display real-time network traffic statistics by host
+
+SYNOPSIS
+       isa-top [-i interface] [-s b|p] [-t interval] [-c] [-h]
+
+DESCRIPTION
+       isa-top  is  a  command-line tool that captures and displays real-time network traffic statistics for individual IP
+       addresses. It monitors network interfaces using libpcap and calculates transmission rates for each captured connec‐
+       tion. The statistics are displayed in an interactive terminal interface using ncurses, with automatic updates.
+
+OPTIONS
+       -i interface
+              Specifies the network interface to monitor. If used without an argument, lists all available network  inter‐
+              faces.
+
+       -s b|p Sort output by:
+
+              b      bytes per second (default)
+
+              p      packets per second
+
+       -t interval
+              Sets the update interval for statistics in seconds (default: 1)
+
+       -c     Show cumulative statistics over the entire duration of program execution
+
+       -h     Display help message and exit
+
+OUTPUT
+       The program displays a table with the following columns:
+
+       Source IP:Port
+              Source IP address and port number
+
+       Dest IP:Port
+              Destination IP address and port number
+
+       Proto  Protocol (tcp, udp, icmp, icmpv6, etc.)
+
+       Rx b/s Received data rate in bits per second
+
+       Tx b/s Transmitted data rate in bits per second
+
+       Rx p/s Received packets per second
+
+       Tx p/s Transmitted packets per second
+
+              Data rates are automatically scaled to appropriate units (K, M, G).
+
+EXAMPLES
+       Monitor eth0 interface:
+              isa-top -i eth0
+
+       List available interfaces:
+              isa-top -i
+
+       Sort by packets per second:
+              isa-top -i eth0 -s p
+
+       Update every 5 seconds:
+              isa-top -i eth0 -t 5
+
+       Show cumulative statistics:
+              isa-top -i eth0 -c
+
+CONTROLS
+       q, Q   Quit the program
+
+EXIT STATUS
+       0      Success
+
+       1      Memory allocation error
+
+       2      Threading error
+
+       3      Command line argument error
+
+       4      Packet capture error
+
+NOTES
+       The program requires root privileges.
+
+AUTHOR
+       Michal Pavlíček (xpavlim00@stud.fit.vutbr.cz)
